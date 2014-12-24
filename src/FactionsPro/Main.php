@@ -4,7 +4,9 @@ namespace FactionsPro;
 
 /*
  * 
- * 
+ * v1.2.0 checklist
+ * [ ] Create config file and get all parts working
+ * [ ] Create API for other developers to implement factions in their plugins
  * 
  */
 
@@ -73,10 +75,10 @@ class Main extends PluginBase implements Listener {
 						}
 					}
 					if($args[0] == "invite") {
-						$max = $this->prefs->get("MaxPlayersPerFaction");
-						$this->getServer()->getLogger()->info($max);
-						$this->getServer()->getLogger()->info($this->getNumberOfPlayers($this->getPlayerFaction($sender->getPlayer())));
-						
+						if( $this->isFactionFull($this->getPlayerFaction($sender->getPlayer()->getName())) ) {
+							$sender->sendMessage("[FactionsPro] Faction is full. Please kick players to make room.");
+							return true;
+						}
 						$invited = $this->getServer()->getPlayerExact($args[1]);
 						if($this->isInFaction($invited) == true) {
 							$sender->sendMessage("[FactionsPro] Player is currently in a faction");
@@ -165,7 +167,6 @@ class Main extends PluginBase implements Listener {
 					}	
 				}
 				if(count($args == 1)) {
-					
 					if(strtolower($args[0]) == "motd") {
 						if($this->isInFaction($sender->getName()) == false) {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
@@ -373,9 +374,12 @@ class Main extends PluginBase implements Listener {
 		return $player1Faction["faction"] == $player2Faction["faction"];
 	}
 	public function getNumberOfPlayers($faction) {
-		$query = $this->db->query("SELECT COUNT(*) FROM master WHERE faction='$faction';");
-		$number = $query->fetchArray(SQLITE3_ASSOC);
-		return $number[0];
+		$query = $this->db->query("SELECT COUNT(*) as count FROM master WHERE faction='$faction';");
+		$number = $query->fetchArray();
+		return $number['count'];
+	}
+	public function isFactionFull($faction) {
+		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
 	}
 	public function onDisable() {
 		$this->db->close();
