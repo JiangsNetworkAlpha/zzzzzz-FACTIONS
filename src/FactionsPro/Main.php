@@ -4,9 +4,15 @@ namespace FactionsPro;
 
 /*
  * 
- * v1.2.0 checklist
- * [ ] Create config file and get all parts working
- * [ ] Create API for other developers to implement factions in their plugins
+ * v1.2.0
+ * 
+ * -Config file with 3 editable options
+ * -Fixed bug which would spam console and cause massive lag
+ * -/f info now shows motd leader and # of players
+ * -/f info may be used with a parameter of another faction name to display info
+ * -factions may now only have a configurable amount of players
+ * -factions can only have alphanumeric characters, not doing this in earlier versions would give errors and sometimes crash the server
+ * 
  * 
  */
 
@@ -22,6 +28,7 @@ use pocketmine\utils\TextFormat;
 use pocketmine\scheduler\PluginTask;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
+use pocketmine\event\entity\EntityDamageEvent;
 
 
 class Main extends PluginBase implements Listener {
@@ -33,7 +40,7 @@ class Main extends PluginBase implements Listener {
 		@mkdir($this->getDataFolder());
 		$this->getServer()->getPluginManager()->registerEvents($this, $this);
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
-				"MaxClanNameLength" => 20,
+				"MaxFactionNameLength" => 20,
 				"MaxPlayersPerFaction" => 10,
 				"OnlyLeadersCanInvite" => true,
 		));
@@ -47,25 +54,30 @@ class Main extends PluginBase implements Listener {
 		if($sender instanceof Player) {
 			$player = $sender->getPlayer()->getName();
 			if(strtolower($command->getName('f'))) {
-				// CREATE
 				if(empty($args)) {
 					$sender->sendMessage("[FactionsPro] Please use /f help for a list of commands");
 				}
 				if(count($args == 2)) {
 					if($args[0] == "create") {
+						if(!(ctype_alnum($args[1]))) {
+							$sender->sendMessage("[FactionsPro] You may only use letters and numbers!");
+							return true;
+						}
 						if($this->factionExists($args[1]) == true ) {
 							$sender->sendMessage("[FactionsPro] Faction already exists");
 							return true;
 						}
+						if(strlen($args[1]) > $this->prefs->get("MaxFactionNameLength")) {
+							$sender->sendMessage("[FactionsPro] Faction name is too long. Please try again!");
+							return true;
+						}
 						if($this->isInFaction($sender->getName())) {
 							$sender->sendMessage("[FactionsPro] You must leave this faction first");
+							return true;
 						} else {
-							
-							//Player Data
 							$factionName = $args[1];
 							$player = strtolower($player);
 							$rank = "Leader";
-							//Create row in FactionsPro.db for player
 							$stmt = $this->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
 							$stmt->bindValue(":player", $player);
 							$stmt->bindValue(":faction", $factionName);
@@ -85,8 +97,9 @@ class Main extends PluginBase implements Listener {
 							$sender->sendMessage("[FactionsPro] Player is currently in a faction");
 							return true;
 						}
-						if($this->prefs->get("OnlyLeadersCanInvite") && $this->isLeader($sender->getPlayer()->getName())) {
-							$sender->sendMessage("[FactionsPro] Only your clan leader may invite!");
+						if($this->prefs->get("OnlyLeadersCanInvite") & !($this->isLeader($sender->getPlayer()->getName()))) {
+							$sender->sendMessage("[FactionsPro] Only your faction leader may invite!");
+							return true;
 						}
 						if(!$invited instanceof Player) {
 							$sender->sendMessage("[FactionsPro] Player not online!");
@@ -168,7 +181,37 @@ class Main extends PluginBase implements Listener {
 							$this->getServer()->getPlayerExact($args[1])->sendMessage("[FactionsPro] You have been kicked from \n $factionName!");	
 							return true;
 						}
-					}	
+					}
+					if(strtolower($args[0]) == 'info') {
+						if(isset($args[1])) {
+							if( !(ctype_alnum($args[1])) | !($this->factionExists($args[1]))) {
+								$sender->sendMessage("[FactionsPro] Faction does not exist");
+								return true;
+							}
+							$faction = strtolower($args[1]);
+							$leader = $this->getLeader($faction);
+							$numPlayers = $this->getNumberOfPlayers($faction);
+							$sender->sendMessage("-------------------------");
+							$sender->sendMessage("$faction");
+							$sender->sendMessage("Leader: $leader");
+							$sender->sendMessage("# of Players: $numPlayers");
+							$sender->sendMessage("MOTD: $message");
+							$sender->sendMessage("-------------------------");
+						} else {
+							$faction = $this->getPlayerFaction(strtolower($sender->getName()));
+							$result = $this->db->query("SELECT * FROM motd WHERE faction='$faction';");
+							$array = $result->fetchArray(SQLITE3_ASSOC);
+							$message = $array["message"];
+							$leader = $this->getLeader($faction);
+							$numPlayers = $this->getNumberOfPlayers($faction);
+							$sender->sendMessage("-------------------------");
+							$sender->sendMessage("$faction");
+							$sender->sendMessage("Leader: $leader");
+							$sender->sendMessage("# of Players: $numPlayers");
+							$sender->sendMessage("MOTD: $message");
+							$sender->sendMessage("-------------------------");
+						}
+					}
 				}
 				if(count($args == 1)) {
 					if(strtolower($args[0]) == "motd") {
@@ -185,19 +228,7 @@ class Main extends PluginBase implements Listener {
 						$stmt->bindValue(":player", strtolower($sender->getName()));
 						$stmt->bindValue(":timestamp", time());
 						$result = $stmt->execute();
-					}
-					
-					if(strtolower($args[0]) == "info") {
-						$faction = $this->getPlayerFaction(strtolower($sender->getName()));
-						$result = $this->db->query("SELECT * FROM motd WHERE faction='$faction';");
-						$array = $result->fetchArray(SQLITE3_ASSOC);
-						$message = $array["message"];
-						$sender->sendMessage("-------------------------");
-						$sender->sendMessage("$faction MOTD:");
-						$sender->sendMessage("$message");
-						$sender->sendMessage("-------------------------");
-					}
-					
+					}					
 					if(strtolower($args[0]) == "accept") {
 						$player = $sender->getName();
 						$lowercaseName = strtolower($player);
@@ -334,18 +365,20 @@ class Main extends PluginBase implements Listener {
 		}
 	}*/
 	
-	public function factionPVP(EntityDamageByEntityEvent $factionDamage) {
-		if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)) {
-			return true;
-		}
-		if(($this->isInFaction($factionDamage->getEntity()->getPlayer()->getName()) == false) or ($this->isInFaction($factionDamage->getDamager()->getPlayer()->getName()) == false) ) {
-			return true;
-		}
-		if(($factionDamage->getEntity() instanceof Player) and ($factionDamage->getDamager() instanceof Player)) {
-			$player1 = $factionDamage->getEntity()->getPlayer()->getName();
-			$player2 = $factionDamage->getDamager()->getPlayer()->getName();
-			if($this->sameFaction($player1, $player2) == true) {
-				$factionDamage->setCancelled(true);
+	public function factionPVP(EntityDamageEvent $factionDamage) {
+		if($factionDamage instanceof EntityDamageByEntityEvent) {
+			if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)) {
+				return true;
+			}
+			if(($this->isInFaction($factionDamage->getEntity()->getPlayer()->getName()) == false) or ($this->isInFaction($factionDamage->getDamager()->getPlayer()->getName()) == false) ) {
+				return true;
+			}
+			if(($factionDamage->getEntity() instanceof Player) and ($factionDamage->getDamager() instanceof Player)) {
+				$player1 = $factionDamage->getEntity()->getPlayer()->getName();
+				$player2 = $factionDamage->getDamager()->getPlayer()->getName();
+				if($this->sameFaction($player1, $player2) == true) {
+					$factionDamage->setCancelled(true);
+				}
 			}
 		}
 	}
@@ -364,6 +397,11 @@ class Main extends PluginBase implements Listener {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["faction"];
+	}
+	public function getLeader($faction) {
+		$leader = $this->db->query("SELECT * FROM master WHERE faction='$faction' AND rank='Leader';");
+		$leaderArray = $leader->fetchArray(SQLITE3_ASSOC);
+		return $leaderArray['player'];
 	}
 	public function factionExists($faction) {
 		$result = $this->db->query("SELECT * FROM master WHERE faction='$faction';");
