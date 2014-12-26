@@ -35,6 +35,7 @@ class Main extends PluginBase implements Listener {
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
 				"MaxClanNameLength" => 20,
 				"MaxPlayersPerFaction" => 10,
+				"OnlyLeadersCanInvite" => true,
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
@@ -83,6 +84,9 @@ class Main extends PluginBase implements Listener {
 						if($this->isInFaction($invited) == true) {
 							$sender->sendMessage("[FactionsPro] Player is currently in a faction");
 							return true;
+						}
+						if($this->prefs->get("OnlyLeadersCanInvite") && $this->isLeader($sender->getPlayer()->getName())) {
+							$sender->sendMessage("[FactionsPro] Only your clan leader may invite!");
 						}
 						if(!$invited instanceof Player) {
 							$sender->sendMessage("[FactionsPro] Player not online!");
