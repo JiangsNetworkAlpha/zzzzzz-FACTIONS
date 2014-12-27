@@ -35,6 +35,7 @@ class Main extends PluginBase implements Listener {
 	
 	public $db;
 	public $prefs;
+	public $plot;
 	
 	public function onEnable() {
 		@mkdir($this->getDataFolder());
@@ -49,6 +50,7 @@ class Main extends PluginBase implements Listener {
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
+		$this->plot = new PlotClaim($this);
 		}
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
 		if($sender instanceof Player) {
@@ -88,7 +90,7 @@ class Main extends PluginBase implements Listener {
 						}
 					}
 					if($args[0] == "invite") {
-						if( $this->isFactionFull($this->getPlayerFaction($sender->getPlayer()->getName())) ) {
+						if( $this->isFactionFull($this->getPlayerFaction($player)) ) {
 							$sender->sendMessage("[FactionsPro] Faction is full. Please kick players to make room.");
 							return true;
 						}
@@ -97,7 +99,7 @@ class Main extends PluginBase implements Listener {
 							$sender->sendMessage("[FactionsPro] Player is currently in a faction");
 							return true;
 						}
-						if($this->prefs->get("OnlyLeadersCanInvite") & !($this->isLeader($sender->getPlayer()->getName()))) {
+						if($this->prefs->get("OnlyLeadersCanInvite") & !($this->isLeader($player))) {
 							$sender->sendMessage("[FactionsPro] Only your faction leader may invite!");
 							return true;
 						}
@@ -132,7 +134,7 @@ class Main extends PluginBase implements Listener {
 										$factionName = $this->getPlayerFaction($player);
 										
 										$stmt = $this->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
-										$stmt->bindValue(":player", $sender->getPlayer()->getName());
+										$stmt->bindValue(":player", $player);
 										$stmt->bindValue(":faction", $factionName);
 										$stmt->bindValue(":rank", "Member");
 										$result = $stmt->execute();
@@ -243,7 +245,7 @@ class Main extends PluginBase implements Listener {
 						if( ($currentTime - $invitedTime) <= 45 ) { //This should be configurable
 							$faction = $array["faction"];
 							$stmt = $this->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
-							$stmt->bindValue(":player", strtolower($sender->getPlayer()->getName()));
+							$stmt->bindValue(":player", strtolower($player));
 							$stmt->bindValue(":faction", $faction);
 							$stmt->bindValue(":rank", "Member");
 							$result = $stmt->execute();
