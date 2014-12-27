@@ -50,7 +50,7 @@ class Main extends PluginBase implements Listener {
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
-		$this->getServer()->getPluginManager()->registerEvents(new PlotClaim($this), $this);
+		$this->plot = $this->getServer()->getPluginManager()->registerEvents(new PlotClaim($this), $this);
 		}
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
 		if($sender instanceof Player) {
