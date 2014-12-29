@@ -27,14 +27,15 @@ class FactionListener implements Listener {
 	}
 	
 	public function factionChat(PlayerChatEvent $PCE) {
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true) {
+				//This will be chat for players who are "Members" of a faction
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isMember($PCE->getPlayer()->getName()) == true) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
 			$lowerp = strtolower($p);
 			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
 			$f = $result["faction"];
-			$PCE->setFormat("[$f] $p: $m");
+			$PCE->setFormat("[+$f] $p: $m");
 			//MOTD RECEIVER
 			$p = strtolower($p);
 			$stmt = $this->plugin->db->query("SELECT * FROM motdrcv WHERE player='$p';");
@@ -57,7 +58,30 @@ class FactionListener implements Listener {
 					$PCE->getPlayer()->sendMessage("[FactionsPro] Successfully updated faction message of the day!");
 				}
 			}
-		} else {
+			return true;
+		}
+		//This will be the chat for players that are "Officers" of a faction
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isOfficer($PCE->getPlayer()->getName()) == true) {
+			$m = $PCE->getMessage();
+			$p = $PCE->getPlayer()->getName();
+			$lowerp = strtolower($p);
+			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
+			$result = $stmt->fetchArray(SQLITE3_ASSOC);
+			$f = $result["faction"];
+			$PCE->setFormat("[*$f] $p: $m");
+			return true;
+		}
+		//This will be the chat for players that are "Leaders" of a faction
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isLeader($PCE->getPlayer()->getName()) == true) {
+			$m = $PCE->getMessage();
+			$p = $PCE->getPlayer()->getName();
+			$lowerp = strtolower($p);
+			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
+			$result = $stmt->fetchArray(SQLITE3_ASSOC);
+			$f = $result["faction"];
+			$PCE->setFormat("[**$f] $p: $m");
+			return true;
+		}else {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
 			$PCE->setFormat("$p: $m");
