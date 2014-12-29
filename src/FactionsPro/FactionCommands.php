@@ -32,6 +32,9 @@ class FactionCommands {
 					$sender->sendMessage("[FactionsPro] Please use /f help for a list of commands");
 				}
 				if(count($args == 2)) {
+					
+					//Create
+					
 					if($args[0] == "create") {
 						if(!(ctype_alnum($args[1]))) {
 							$sender->sendMessage("[FactionsPro] You may only use letters and numbers!");
@@ -61,6 +64,9 @@ class FactionCommands {
 							return true;
 						}
 					}
+					
+					//Invite
+					
 					if($args[0] == "invite") {
 						if( $this->plugin->isFactionFull($this->plugin->getPlayerFaction($player)) ) {
 							$sender->sendMessage("[FactionsPro] Faction is full. Please kick players to make room.");
@@ -97,6 +103,9 @@ class FactionCommands {
 							$sender->sendMessage("[FactionsPro] Player not online!");
 						}
 					}
+					
+					//Leader
+					
 					if($args[0] == "leader") {
 						if($this->plugin->isInFaction($sender->getName()) == true) {
 							if($this->plugin->isLeader($player) == true) {
@@ -133,6 +142,67 @@ class FactionCommands {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
 						}
 					}
+					
+					//Promote
+					
+					if($args[0] == "promote") {
+						
+						$factionName = $this->plugin->getPlayerFaction($player);
+						
+						if($this->plugin->isInFaction($sender->getName()) == false) {
+							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
+							return true;
+						}
+						if($this->plugin->isLeader($player) == false) {
+							$sender->sendMessage("[FactionsPro] You must be leader to use this");
+							return true;
+						}
+						if($this->plugin->getPlayerFaction($player) != $this->getPlayerFaction($args[1])) {
+							$sender->sendMessage("[FactionsPro] Player is not in this faction!");
+							return true;
+						}
+						if($this->plugin->isOfficer($player) == true) {
+							$sender->sendMessage("[FactionsPro] Player is already officer");
+							return true;
+						}
+						$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
+						$stmt->bindValue(":player", strtolower($args[1]));
+						$stmt->bindValue(":faction", $factionName);
+						$stmt->bindValue(":rank", "Officer");
+						$result = $stmt->execute();
+					}
+					
+					//Demote
+					
+					if($args[0] == "promote") {
+					
+						$factionName = $this->plugin->getPlayerFaction($player);
+					
+						if($this->plugin->isInFaction($sender->getName()) == false) {
+							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
+							return true;
+						}
+						if($this->plugin->isLeader($player) == false) {
+							$sender->sendMessage("[FactionsPro] You must be leader to use this");
+							return true;
+						}
+						if($this->plugin->getPlayerFaction($player) != $this->getPlayerFaction($args[1])) {
+							$sender->sendMessage("[FactionsPro] Player is not in this faction!");
+							return true;
+						}
+						if($this->plugin->isOfficer($player) == false) {
+							$sender->sendMessage("[FactionsPro] Player is not Officer");
+							return true;
+						}
+						$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
+						$stmt->bindValue(":player", strtolower($args[1]));
+						$stmt->bindValue(":faction", $factionName);
+						$stmt->bindValue(":rank", "Member");
+						$result = $stmt->execute();
+					}
+					
+					//Kick
+					
 					if($args[0] == "kick") {
 						if($this->plugin->isInFaction($sender->getName()) == false) {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
@@ -156,6 +226,9 @@ class FactionCommands {
 							return true;
 						}
 					}
+					
+					//Info
+					
 					if(strtolower($args[0]) == 'info') {
 						if(isset($args[1])) {
 							if( !(ctype_alnum($args[1])) | !($this->plugin->factionExists($args[1]))) {
@@ -188,6 +261,13 @@ class FactionCommands {
 					}
 				}
 				if(count($args == 1)) {
+					
+					//MOTD
+					
+					if(strtolower($args[0]) == "plot") {
+						$this->plugin->drawPlotSquare($sender->getPlayer()->getX(), $sender->getPlayer()->getY(), $sender->getPlayer()->getZ(), $sender->getPlayer()->getLevel(), 11);
+					}
+					
 					if(strtolower($args[0]) == "motd") {
 						if($this->plugin->isInFaction($sender->getName()) == false) {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
@@ -203,6 +283,9 @@ class FactionCommands {
 						$stmt->bindValue(":timestamp", time());
 						$result = $stmt->execute();
 					}
+					
+					//Accept
+					
 					if(strtolower($args[0]) == "accept") {
 						$player = $sender->getName();
 						$lowercaseName = strtolower($player);
@@ -214,7 +297,7 @@ class FactionCommands {
 						}
 						$invitedTime = $array["timestamp"];
 						$currentTime = time();
-						if( ($currentTime - $invitedTime) <= 45 ) { //This should be configurable
+						if( ($currentTime - $invitedTime) <= 60 ) { //This should be configurable
 							$faction = $array["faction"];
 							$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
 							$stmt->bindValue(":player", strtolower($player));
@@ -229,6 +312,9 @@ class FactionCommands {
 							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$player';");
 						}
 					}
+					
+					//Deny
+					
 					if(strtolower($args[0]) == "deny") {
 						$player = $sender->getName();
 						$lowercaseName = strtolower($player);
@@ -240,7 +326,7 @@ class FactionCommands {
 						}
 						$invitedTime = $array["timestamp"];
 						$currentTime = time();
-						if( ($currentTime - $invitedTime) <= 45 ) { //This should be configurable
+						if( ($currentTime - $invitedTime) <= 60 ) { //This should be configurable
 							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
 							$sender->sendMessage("[FactionsPro] Invite declined!");
 							$this->plugin->getServer()->getPlayerExact($array["invitedby"])->sendMessage("[FactionsPro] $player declined the invite!");
@@ -249,6 +335,9 @@ class FactionCommands {
 							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
 						}
 					}
+					
+					//Delete
+					
 					if(strtolower($args[0]) == "del") {
 						if($this->plugin->isInFaction($player) == true) {
 							if($this->plugin->isLeader($player)) {
@@ -262,6 +351,9 @@ class FactionCommands {
 							$sender->sendMessage("[FactionsPro] You are not in a faction!");
 						}
 					}
+					
+					//Leave
+					
 					if(strtolower($args[0] == "leave")) {
 						if($this->plugin->isLeader($player) == false) {
 							$remove = $sender->getPlayer()->getNameTag();

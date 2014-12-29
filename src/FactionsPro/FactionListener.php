@@ -15,6 +15,7 @@ use pocketmine\scheduler\PluginTask;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\event\player\PlayerMoveEvent;
 
 
 class FactionListener implements Listener {
@@ -96,5 +97,8 @@ class FactionListener implements Listener {
 				}
 			}
 		}
+	}
+	public function getCoords(BlockBreakEvent $event) {
+		$event->getPlayer()->sendMessage("X:" . $event->getBlock()->getX(). " Y:" . $event->getBlock()->getY() . " Z:" . $event->getBlock()->getZ());
 	}
 }

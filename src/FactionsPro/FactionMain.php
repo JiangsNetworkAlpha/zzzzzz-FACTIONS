@@ -29,6 +29,8 @@ use pocketmine\scheduler\PluginTask;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\block\Snow;
+use pocketmine\math\Vector3;
 
 
 class FactionMain extends PluginBase implements Listener {
@@ -52,12 +54,11 @@ class FactionMain extends PluginBase implements Listener {
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
-		}
+	}
 		
-		public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
-			$this->fCommand->onCommand($sender, $command, $label, $args);
-		}
-
+	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
+		$this->fCommand->onCommand($sender, $command, $label, $args);
+	}
 	public function isInFaction($player) {
 		$player = strtolower($player);
 		$result = $this->db->query("SELECT * FROM master WHERE player='$player';");
@@ -68,6 +69,11 @@ class FactionMain extends PluginBase implements Listener {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Leader";
+	}
+	public function isOfficer($player) {
+		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+		return $factionArray["rank"] == "Officer";
 	}
 	public function getPlayerFaction($player) {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
@@ -98,6 +104,29 @@ class FactionMain extends PluginBase implements Listener {
 	}
 	public function isFactionFull($faction) {
 		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
+	}
+	
+	//Drawing Functions
+	
+	public function drawPlotSquare($x, $y, $z, $level, $size) {
+		if($size % 2 != 0) {
+			$size++;
+		}
+		$diag = ($size - 1) / 2;
+		$x = $x;
+		$y = $y;
+		$z = $z;
+		$this->getServer()->getLogger()->info("Ran!");
+		$block = new Snow();
+		$level->setBlock(new Vector3($x + $diag, $y, $z + $diag), $block);
+		$level->setBlock(new Vector3($x + $diag, $y, $z - $diag), $block);
+		$level->setBlock(new Vector3($x - $diag, $y, $z + $diag), $block);
+		$level->setBlock(new Vector3($x - $diag, $y, $z - $diag), $block);
+		
+		/*for($i = 1; $i <= $size; $i++) {
+			$level->setBlock(new Vector3($x + ($size + 1 / 2), $y, $z + ($size + 1 / 2)), $block);
+			$z--;
+		}*/
 	}
 	public function onDisable() {
 		$this->db->close();
