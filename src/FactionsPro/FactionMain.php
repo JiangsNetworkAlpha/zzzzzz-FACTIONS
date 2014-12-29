@@ -47,7 +47,8 @@ class FactionMain extends PluginBase implements Listener {
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
 				"MaxFactionNameLength" => 20,
 				"MaxPlayersPerFaction" => 10,
-				"OnlyLeadersCanInvite" => true,
+				"OnlyLeadersAndOfficersCanInvite" => true,
+				"OfficersCanClaim" => true,
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
@@ -74,6 +75,11 @@ class FactionMain extends PluginBase implements Listener {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Officer";
+	}
+	public function isMember($player) {
+		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+		return $factionArray["rank"] == "Member";
 	}
 	public function getPlayerFaction($player) {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
