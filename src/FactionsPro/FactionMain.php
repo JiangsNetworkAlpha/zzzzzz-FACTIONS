@@ -8,7 +8,7 @@ namespace FactionsPro;
  * [X] Separate into Command, Listener, and Main files
  * [ ] Implement commands (plot claim, plot del)
  * [ ] Get plots to work
- * [ ] Add plot to config
+ * [X] Add plot to config
  * [ ] Add faction description /f desc <faction>
  * [ ] Only leaders can edit motd, only members can check
  * [ ] More beautiful looking (and working) config
@@ -49,12 +49,17 @@ class FactionMain extends PluginBase implements Listener {
 				"MaxPlayersPerFaction" => 10,
 				"OnlyLeadersAndOfficersCanInvite" => true,
 				"OfficersCanClaim" => true,
+				"PlotSize" => 25,
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
+		
+		$task = new FactionTask($this);
+		$this->getServer()->getScheduler()->scheduleRepeatingTask($task, 20);
 	}
 		
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
@@ -112,28 +117,54 @@ class FactionMain extends PluginBase implements Listener {
 		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
 	}
 	
+	public function newPlot($faction, $x1, $z1, $x2, $z2) {
+		$stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2) VALUES (:faction, :x1, :z1, :x2, :z2);");
+		$stmt->bindValue(":faction", $faction);
+		$stmt->bindValue(":x1", $x1);
+		$stmt->bindValue(":z1", $z1);
+		$stmt->bindValue(":x2", $x2);
+		$stmt->bindValue(":z2", $z2);
+		$result = $stmt->execute();
+	}
+	
 	//Drawing Functions
 	
-	public function drawPlotSquare($x, $y, $z, $level, $size) {
-		if($size % 2 != 0) {
-			$size++;
-		}
-		$diag = ($size - 1) / 2;
-		$x = $x;
-		$y = $y;
-		$z = $z;
-		$this->getServer()->getLogger()->info("Ran!");
+	public function drawPlot($faction, $x, $y, $z, $level, $size) {
+		$arm = ($size - 1) / 2;
 		$block = new Snow();
-		$level->setBlock(new Vector3($x + $diag, $y, $z + $diag), $block);
-		$level->setBlock(new Vector3($x + $diag, $y, $z - $diag), $block);
-		$level->setBlock(new Vector3($x - $diag, $y, $z + $diag), $block);
-		$level->setBlock(new Vector3($x - $diag, $y, $z - $diag), $block);
-		
-		/*for($i = 1; $i <= $size; $i++) {
-			$level->setBlock(new Vector3($x + ($size + 1 / 2), $y, $z + ($size + 1 / 2)), $block);
-			$z--;
-		}*/
+		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
+		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
+		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
 	}
+	
+	public function updatePlots() {
+	}
+	
+	public function plotChecker($onlinePlayers) {
+		foreach($onlinePlayers as $player) {
+			if($this->isInPlot($player)) {
+				$player->sendMessage("[FactionsPro] You are in a plot.");
+			}
+		}
+	}
+	
+	public function isInPlot($player) {
+		$x = $player->getFloorX();
+		$z = $player->getFloorZ();
+		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$array = $result->fetchArray(SQLITE3_ASSOC);
+		return empty($array) == false;
+	}
+	
+	public function inOwnPlot($player) {
+		$playerName = $player->getName();
+		$x = $player->getFloorX();
+		$z = $player->getFloorZ();
+		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$array = $result->fetchArray(SQLITE3_ASSOC);
+		return $this->getPlayerFaction($playerName) == $array['faction'];
+	}
+	
 	public function onDisable() {
 		$this->db->close();
 	}

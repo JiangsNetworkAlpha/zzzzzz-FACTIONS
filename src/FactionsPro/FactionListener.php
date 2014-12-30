@@ -16,6 +16,7 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\player\PlayerMoveEvent;
+use pocketmine\event\block\BlockPlaceEvent;
 
 
 class FactionListener implements Listener {
@@ -60,7 +61,7 @@ class FactionListener implements Listener {
 			}
 			return true;
 		}
-		//This will be the chat for players that are "Officers" of a faction
+		//This will be the chat for players that are "Officers"
 		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isOfficer($PCE->getPlayer()->getName()) == true) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
@@ -71,7 +72,7 @@ class FactionListener implements Listener {
 			$PCE->setFormat("[*$f] $p: $m");
 			return true;
 		}
-		//This will be the chat for players that are "Leaders" of a faction
+		//This will be the chat for players that are "Leaders"
 		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isLeader($PCE->getPlayer()->getName()) == true) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
@@ -87,24 +88,6 @@ class FactionListener implements Listener {
 			$PCE->setFormat("$p: $m");
 		}
 	}
-	
-	//To be implemented later
-	
-	/*public function playerJoinInfo(PlayerJoinEvent $PJE) {
-	 if($this->isInFaction($PJE->getPlayer()->getName()) == true) {
-	 $player = $PJE->getPlayer();
-	 $faction = $this->getPlayerFaction(strtolower($PJE->getPlayer()->getName()));
-	 $result = db->query("SELECT * FROM motd WHERE faction='$faction';");
-	 $array = $result->fetchArray(SQLITE3_ASSOC);
-	 $message = $array["message"];
-	 $player->sendMessage("-------------------------");
-	 $player->sendMessage(Welcome Back, $player);
-	 $player->sendMessage("$faction MOTD:");
-	 $player->sendMessage("$message");
-	 $player->sendMessage("-------------------------");
-	 }
-	 }*/
-	
 	public function factionPVP(EntityDamageEvent $factionDamage) {
 		if($factionDamage instanceof EntityDamageByEntityEvent) {
 			if(!($factionDamage->getEntity() instanceof Player) or !($factionDamage->getDamager() instanceof Player)) {
@@ -122,7 +105,28 @@ class FactionListener implements Listener {
 			}
 		}
 	}
-	public function getCoords(BlockBreakEvent $event) {
-		$event->getPlayer()->sendMessage("X:" . $event->getBlock()->getX(). " Y:" . $event->getBlock()->getY() . " Z:" . $event->getBlock()->getZ());
+	public function factionBlockBreakProtect(BlockBreakEvent $event) {
+		if($this->plugin->isInPlot($event->getPlayer())) {
+			if($this->plugin->inOwnPlot($event->getPlayer())) {
+				return true;
+			} else {
+				$event->setCancelled(true);
+				$event->getPlayer()->sendMessage("[FactionsPro] You cannot break blocks here.");
+				return true;
+			}
+		}
 	}
+	
+	public function factionBlockPlaceProtect(BlockPlaceEvent $event) {
+		if($this->plugin->isInPlot($event->getPlayer())) {
+			if($this->plugin->inOwnPlot($event->getPlayer())) {
+				return true;
+			} else {
+				$event->setCancelled(true);
+				$event->getPlayer()->sendMessage("[FactionsPro] You cannot place blocks here.");
+				return true;
+			}
+		}
+	}
+	
 }

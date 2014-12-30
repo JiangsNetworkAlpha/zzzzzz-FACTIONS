@@ -15,6 +15,7 @@ use pocketmine\scheduler\PluginTask;
 use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
+use pocketmine\math\Vector3;
 
 class FactionCommands {
 	
@@ -174,7 +175,7 @@ class FactionCommands {
 					
 					//Demote
 					
-					if($args[0] == "promote") {
+					if($args[0] == "demote") {
 					
 						$factionName = $this->plugin->getPlayerFaction($player);
 					
@@ -262,11 +263,18 @@ class FactionCommands {
 				}
 				if(count($args == 1)) {
 					
-					//MOTD
+					//Plot
 					
 					if(strtolower($args[0]) == "plot") {
-						$this->plugin->drawPlotSquare($sender->getPlayer()->getX(), $sender->getPlayer()->getY(), $sender->getPlayer()->getZ(), $sender->getPlayer()->getLevel(), 11);
+						$x = floor($sender->getX());
+						$y = floor($sender->getY());
+						$z = floor($sender->getZ());
+						$faction = $this->plugin->getPlayerFaction($sender->getPlayer()->getName());
+						$this->plugin->drawPlot($faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize"));
+						$sender->sendMessage("[FactionsPro] Plot claimed.");
 					}
+					
+					//MOTD
 					
 					if(strtolower($args[0]) == "motd") {
 						if($this->plugin->isInFaction($sender->getName()) == false) {
