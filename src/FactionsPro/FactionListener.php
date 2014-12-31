@@ -28,8 +28,14 @@ class FactionListener implements Listener {
 	}
 	
 	public function factionChat(PlayerChatEvent $PCE) {
+		if(!$this->plugin->getServer()->getPluginManager()->getPlugin("CustomChat") == false) {
+			return true;
+		}	
+		if(!$this->plugin->getServer()->getPluginManager()->getPlugin("PureChat") == false) {
+			return true;
+		}	
 				//This will be chat for players who are "Members" of a faction
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isMember($PCE->getPlayer()->getName()) == true) {
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isMember($PCE->getPlayer()->getName())) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
 			$lowerp = strtolower($p);
@@ -41,7 +47,7 @@ class FactionListener implements Listener {
 			$p = strtolower($p);
 			$stmt = $this->plugin->db->query("SELECT * FROM motdrcv WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
-			if(empty($result) == false) {
+			if(!empty($result)) {
 				if(time() - $result["timestamp"] > 30) {
 					$PCE->getPlayer()->sendMessage("[FactionsPro] Timed out. Please use /f motd again.");
 					$this->plugin->db->query("DELETE FROM motdrcv WHERE player='$p';");
@@ -62,7 +68,7 @@ class FactionListener implements Listener {
 			return true;
 		}
 		//This will be the chat for players that are "Officers"
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isOfficer($PCE->getPlayer()->getName()) == true) {
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isOfficer($PCE->getPlayer()->getName())) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
 			$lowerp = strtolower($p);
@@ -73,7 +79,7 @@ class FactionListener implements Listener {
 			return true;
 		}
 		//This will be the chat for players that are "Leaders"
-		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isLeader($PCE->getPlayer()->getName()) == true) {
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isLeader($PCE->getPlayer()->getName())) {
 			$m = $PCE->getMessage();
 			$p = $PCE->getPlayer()->getName();
 			$lowerp = strtolower($p);
