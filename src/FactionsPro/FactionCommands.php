@@ -243,20 +243,20 @@ class FactionCommands {
 							$sender->sendMessage("$faction");
 							$sender->sendMessage("Leader: $leader");
 							$sender->sendMessage("# of Players: $numPlayers");
-							$sender->sendMessage("MOTD: $message");
+							$sender->sendMessage("Desc: $description");
 							$sender->sendMessage("-------------------------");
 						} else {
 							$faction = $this->plugin->getPlayerFaction(strtolower($sender->getName()));
-							$result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
+							$result = $this->plugin->db->query("SELECT * FROM desc WHERE faction='$faction';");
 							$array = $result->fetchArray(SQLITE3_ASSOC);
-							$message = $array["message"];
+							$description = $array["description"];
 							$leader = $this->plugin->getLeader($faction);
 							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
 							$sender->sendMessage("-------------------------");
 							$sender->sendMessage("$faction");
 							$sender->sendMessage("Leader: $leader");
 							$sender->sendMessage("# of Players: $numPlayers");
-							$sender->sendMessage("MOTD: $message");
+							$sender->sendMessage("Desc: $description");
 							$sender->sendMessage("-------------------------");
 						}
 					}
@@ -265,18 +265,28 @@ class FactionCommands {
 					
 					//Plot
 					
-					if(strtolower($args[0]) == "plot") {
+					if(strtolower($args[0]) == "claim") {
 						$x = floor($sender->getX());
 						$y = floor($sender->getY());
 						$z = floor($sender->getZ());
 						$faction = $this->plugin->getPlayerFaction($sender->getPlayer()->getName());
-						$this->plugin->drawPlot($faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize"));
+						$this->plugin->drawPlot($sender, $faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize"));
 						$sender->sendMessage("[FactionsPro] Plot claimed.");
 					}
 					
-					//MOTD
+					if(strtolower($args[0]) == "unclaim") {
+						if(!$this->plugin->isLeader($sender->getName())) {
+							$sender->sendMessage("[FactionsPro] You must be leader to use this.");
+							return true;
+						}
+						$faction = $this->plugin->getPlayerFaction($sender->getName());
+						$this->plugin->db->query("DELETE FROM master WHERE faction='$faction';");
+						$sender->sendMessage("[FactionsPro] Plot unclaimed.");
+					}
 					
-					if(strtolower($args[0]) == "motd") {
+					//Description
+					
+					if(strtolower($args[0]) == "desc") {
 						if($this->plugin->isInFaction($sender->getName()) == false) {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
 							return true;
@@ -285,8 +295,8 @@ class FactionCommands {
 							$sender->sendMessage("[FactionsPro] You must be leader to use this");
 							return true;
 						}
-						$sender->sendMessage("[FactionsPro] Type your message in chat. It will not be visible to other players");
-						$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO motdrcv (player, timestamp) VALUES (:player, :timestamp);");
+						$sender->sendMessage("[FactionsPro] Type your description in chat. It will not be visible to other players");
+						$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO descRCV (player, timestamp) VALUES (:player, :timestamp);");
 						$stmt->bindValue(":player", strtolower($sender->getName()));
 						$stmt->bindValue(":timestamp", time());
 						$result = $stmt->execute();

@@ -6,12 +6,13 @@ namespace FactionsPro;
  * 
  * v1.3.0 To Do List
  * [X] Separate into Command, Listener, and Main files
- * [ ] Implement commands (plot claim, plot del)
- * [ ] Get plots to work
+ * [X] Implement commands (plot claim, plot del)
+ * [X] Get plots to work
  * [X] Add plot to config
- * [ ] Add faction description /f desc <faction>
+ * [X] Add faction description /f desc <faction>
  * [ ] Only leaders can edit motd, only members can check
- * [ ] More beautiful looking (and working) config
+ * [X] More beautiful looking (and working) config
+ * [ ] Better support for Officers
  * 
  * 
  */
@@ -37,6 +38,7 @@ class FactionMain extends PluginBase implements Listener {
 	
 	public $db;
 	public $prefs;
+	public $work;
 	
 	public function onEnable() {
 		@mkdir($this->getDataFolder());
@@ -54,12 +56,17 @@ class FactionMain extends PluginBase implements Listener {
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS descRCV (player TEXT PRIMARY KEY, timestamp INT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS desc (faction TEXT PRIMARY KEY, description TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
 		
-		$task = new FactionTask($this);
-		$this->getServer()->getScheduler()->scheduleRepeatingTask($task, 20);
+		/*
+		 * Will implement when it only alerts you if you step into a plot for the first time
+		 * 
+		 * $task = new FactionTask($this);
+		 * $this->getServer()->getScheduler()->scheduleRepeatingTask($task, 20);
+		 * 
+		 */
 	}
 		
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
@@ -74,11 +81,17 @@ class FactionMain extends PluginBase implements Listener {
 	public function isLeader($player) {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+		if(empty($factionArray)) {
+			return false;
+		}
 		return $factionArray["rank"] == "Leader";
 	}
 	public function isOfficer($player) {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+		if(empty($factionArray)) {
+			return false;
+		}
 		return $factionArray["rank"] == "Officer";
 	}
 	public function isMember($player) {
@@ -126,12 +139,13 @@ class FactionMain extends PluginBase implements Listener {
 		$stmt->bindValue(":z2", $z2);
 		$result = $stmt->execute();
 	}
-	
-	//Drawing Functions
-	
-	public function drawPlot($faction, $x, $y, $z, $level, $size) {
+	public function drawPlot($sender, $faction, $x, $y, $z, $level, $size) {
 		$arm = ($size - 1) / 2;
 		$block = new Snow();
+		if($this->cornerIsInPlot($x + $arm, $z + $arm, $x - $arm, $z - $arm)) {
+			$sender->sendMessage("[FactionsPro] Cannot place plot here.");
+			return true;
+		}
 		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
 		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
 		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
@@ -156,6 +170,12 @@ class FactionMain extends PluginBase implements Listener {
 		return empty($array) == false;
 	}
 	
+	public function factionFromPoint($x,$z) {
+		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$array = $result->fetchArray(SQLITE3_ASSOC);
+		return $array["faction"];
+	}
+	
 	public function inOwnPlot($player) {
 		$playerName = $player->getName();
 		$x = $player->getFloorX();
@@ -163,6 +183,16 @@ class FactionMain extends PluginBase implements Listener {
 		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return $this->getPlayerFaction($playerName) == $array['faction'];
+	}
+	
+	public function pointIsInPlot($x,$y) {
+		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
+		$array = $result->fetchArray(SQLITE3_ASSOC);
+		return !empty($array);
+	}
+	
+	public function cornerIsInPlot($x1, $z1, $x2, $z2) {
+		return($this->pointIsInPlot($x1, $y1) || $this->pointIsInPlot($x1, $y2) || $this->pointIsInPlot($x2, $y1) || $this->pointIsInPlot($x2, $y2));
 	}
 	
 	public function onDisable() {
