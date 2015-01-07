@@ -2,21 +2,6 @@
 
 namespace FactionsPro;
 
-/*
- * 
- * v1.3.0 To Do List
- * [X] Separate into Command, Listener, and Main files
- * [X] Implement commands (plot claim, plot del)
- * [X] Get plots to work
- * [X] Add plot to config
- * [X] Add faction description /f desc <faction>
- * [ ] Only leaders can edit motd, only members can check
- * [X] More beautiful looking (and working) config
- * [ ] Better support for Officers
- * 
- * 
- */
-
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -52,13 +37,16 @@ class FactionMain extends PluginBase implements Listener {
 				"OnlyLeadersAndOfficersCanInvite" => true,
 				"OfficersCanClaim" => true,
 				"PlotSize" => 25,
+				"OfficerIdentifier" => '*',
+				"LeaderIdentifier" => '**',
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS descRCV (player TEXT PRIMARY KEY, timestamp INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS desc (faction TEXT PRIMARY KEY, description TEXT);");
+		//$this->db->exec("CREATE TABLE IF NOT EXISTS descRCV (player TEXT PRIMARY KEY, timestamp INT);");
+		//$this->db->exec("CREATE TABLE IF NOT EXISTS desc (faction TEXT PRIMARY KEY, description TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT);");
 		
 		/*
 		 * Will implement when it only alerts you if you step into a plot for the first time
@@ -149,6 +137,7 @@ class FactionMain extends PluginBase implements Listener {
 		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
 		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
 		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
+		$sender->sendMessage("[FactionsPro] Plot claimed.");
 	}
 	
 	public function updatePlots() {
@@ -185,14 +174,14 @@ class FactionMain extends PluginBase implements Listener {
 		return $this->getPlayerFaction($playerName) == $array['faction'];
 	}
 	
-	public function pointIsInPlot($x,$y) {
+	public function pointIsInPlot($x,$z) {
 		$result = $this->db->query("SELECT * FROM plots WHERE $x <= x1 AND $x >= x2 AND $z <= z1 AND $z >= z2;");
 		$array = $result->fetchArray(SQLITE3_ASSOC);
 		return !empty($array);
 	}
 	
 	public function cornerIsInPlot($x1, $z1, $x2, $z2) {
-		return($this->pointIsInPlot($x1, $y1) || $this->pointIsInPlot($x1, $y2) || $this->pointIsInPlot($x2, $y1) || $this->pointIsInPlot($x2, $y2));
+		return($this->pointIsInPlot($x1, $z1) || $this->pointIsInPlot($x1, $z2) || $this->pointIsInPlot($x2, $z1) || $this->pointIsInPlot($x2, $z2));
 	}
 	
 	public function onDisable() {

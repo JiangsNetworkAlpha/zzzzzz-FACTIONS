@@ -243,20 +243,20 @@ class FactionCommands {
 							$sender->sendMessage("$faction");
 							$sender->sendMessage("Leader: $leader");
 							$sender->sendMessage("# of Players: $numPlayers");
-							$sender->sendMessage("Desc: $description");
+							//$sender->sendMessage("Desc: $description");
 							$sender->sendMessage("-------------------------");
 						} else {
 							$faction = $this->plugin->getPlayerFaction(strtolower($sender->getName()));
 							$result = $this->plugin->db->query("SELECT * FROM desc WHERE faction='$faction';");
 							$array = $result->fetchArray(SQLITE3_ASSOC);
-							$description = $array["description"];
+							//$description = $array["description"];
 							$leader = $this->plugin->getLeader($faction);
 							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
 							$sender->sendMessage("-------------------------");
 							$sender->sendMessage("$faction");
 							$sender->sendMessage("Leader: $leader");
 							$sender->sendMessage("# of Players: $numPlayers");
-							$sender->sendMessage("Desc: $description");
+							//$sender->sendMessage("Desc: $description");
 							$sender->sendMessage("-------------------------");
 						}
 					}
@@ -266,12 +266,15 @@ class FactionCommands {
 					//Plot
 					
 					if(strtolower($args[0]) == "claim") {
+						if(!$this->plugin->isInFaction($sender->getName())) {
+							$sender->sendMessage("[FactionsPro] You must be in a faction to use this.");
+							return true;
+						}
 						$x = floor($sender->getX());
 						$y = floor($sender->getY());
 						$z = floor($sender->getZ());
 						$faction = $this->plugin->getPlayerFaction($sender->getPlayer()->getName());
 						$this->plugin->drawPlot($sender, $faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize"));
-						$sender->sendMessage("[FactionsPro] Plot claimed.");
 					}
 					
 					if(strtolower($args[0]) == "unclaim") {
@@ -280,13 +283,13 @@ class FactionCommands {
 							return true;
 						}
 						$faction = $this->plugin->getPlayerFaction($sender->getName());
-						$this->plugin->db->query("DELETE FROM master WHERE faction='$faction';");
+						$this->plugin->db->query("DELETE FROM plots WHERE faction='$faction';");
 						$sender->sendMessage("[FactionsPro] Plot unclaimed.");
 					}
 					
 					//Description
 					
-					if(strtolower($args[0]) == "desc") {
+					/*if(strtolower($args[0]) == "desc") {
 						if($this->plugin->isInFaction($sender->getName()) == false) {
 							$sender->sendMessage("[FactionsPro] You must be in a faction to use this!");
 							return true;
@@ -300,7 +303,7 @@ class FactionCommands {
 						$stmt->bindValue(":player", strtolower($sender->getName()));
 						$stmt->bindValue(":timestamp", time());
 						$result = $stmt->execute();
-					}
+					}*/
 					
 					//Accept
 					
@@ -383,6 +386,39 @@ class FactionCommands {
 							$sender->sendMessage("[FactionsPro] You must delete or give\nleadership first!");
 						}
 					}
+					
+					//Home
+					
+					if(strtolower($args[0] == "sethome")) {
+						$factionName = $this->plugin->getPlayerFaction($sender->getName());
+						$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO home (faction, x, y, z) VALUES (:faction, :x, :y, :z);");
+						$stmt->bindValue(":faction", $factionName);
+						$stmt->bindValue(":x", $sender->getX());
+						$stmt->bindValue(":y", $sender->getY());
+						$stmt->bindValue(":z", $sender->getZ());
+						$result = $stmt->execute();
+						$sender->sendMessage("[FactionsPro] Home updated!");
+					}
+					
+					if(strtolower($args[0] == "unsethome")) {
+						$faction = $this->plugin->getPlayerFaction($sender->getName());
+						$this->plugin->db->query("DELETE FROM home WHERE faction = '$faction';");
+						$sender->sendMessage("[FactionsPro] Home unset!");
+					}
+					
+					if(strtolower($args[0] == "home")) {
+						$faction = $this->plugin->getPlayerFaction($sender->getName());
+						$result = $this->plugin->db->query("SELECT * FROM home WHERE faction = '$faction';");
+						$array = $result->fetchArray(SQLITE3_ASSOC);
+						if(!empty($array)) {
+							$sender->getPlayer()->teleport(new Vector3($array['x'], $array['y'], $array['z']));
+							$sender->sendMessage("[FactionsPro] Teleported home.");
+							return true;
+						} else {
+							$sender->sendMessage("[FactionsPro] Home is not set.");
+						}
+					}
+					
 					if(strtolower($args[0]) == "help") {
 						$sender->sendMessage("FactionsPro Commands\n/f create <name>\n/f del\n/f help\n/f invite <player>\n/f kick <player>\n/f leave\n/f leader <player>\n/f leave\n/f motd\n/f info");
 					}

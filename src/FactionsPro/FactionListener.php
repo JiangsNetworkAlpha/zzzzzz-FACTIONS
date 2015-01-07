@@ -42,31 +42,36 @@ class FactionListener implements Listener {
 			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
 			$f = $result["faction"];
-			$PCE->setFormat("[+$f] $p: $m");
-			//MOTD RECEIVER
+			$PCE->setFormat("[$f] $p: $m");
+		}
+			
+			/*//DESC RECEIVER
 			$p = strtolower($p);
-			$stmt = $this->plugin->db->query("SELECT * FROM motdrcv WHERE player='$p';");
+			
+			$this->plugin->getServer()->getLogger()->info($p);
+			
+			$stmt = $this->plugin->db->query("SELECT * FROM descRCV WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
 			if(!empty($result)) {
 				if(time() - $result["timestamp"] > 30) {
-					$PCE->getPlayer()->sendMessage("[FactionsPro] Timed out. Please use /f motd again.");
-					$this->plugin->db->query("DELETE FROM motdrcv WHERE player='$p';");
+					$PCE->getPlayer()->sendMessage("[FactionsPro] Timed out. Please use /f desc again.");
+					$this->plugin->db->query("DELETE FROM descRCV WHERE player='$p';");
 					$PCE->setCancelled(true);
 					return true;
 				} else {
-					$motd = $PCE->getMessage();
+					$desc = $PCE->getMessage();
 					$faction = $this->plugin->getPlayerFaction($p);
-					$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO motd (faction, message) VALUES (:faction, :message);");
+					$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO desc (faction, description) VALUES (:faction, :description);");
 					$stmt->bindValue(":faction", $faction);
-					$stmt->bindValue(":message", $motd);
+					$stmt->bindValue(":description", $desc);
 					$result = $stmt->execute();
 					$PCE->setCancelled(true);
-					$this->plugin->db->query("DELETE FROM motdrcv WHERE player='$p';");
+					$this->plugin->db->query("DELETE FROM descRCV WHERE player='$p';");
 					$PCE->getPlayer()->sendMessage("[FactionsPro] Successfully updated faction message of the day!");
 				}
 			}
-			return true;
-		}
+			return true;*/
+			
 		//This will be the chat for players that are "Officers"
 		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isOfficer($PCE->getPlayer()->getName())) {
 			$m = $PCE->getMessage();
@@ -75,7 +80,8 @@ class FactionListener implements Listener {
 			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
 			$f = $result["faction"];
-			$PCE->setFormat("[*$f] $p: $m");
+			$id = $this->plugin->prefs->get("OfficerIdentifier");
+			$PCE->setFormat("[$id$f] $p: $m");
 			return true;
 		}
 		//This will be the chat for players that are "Leaders"
@@ -86,7 +92,8 @@ class FactionListener implements Listener {
 			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
 			$result = $stmt->fetchArray(SQLITE3_ASSOC);
 			$f = $result["faction"];
-			$PCE->setFormat("[**$f] $p: $m");
+			$id = $this->plugin->prefs->get("LeaderIdentifier");
+			$PCE->setFormat("[$id$f] $p: $m");
 			return true;
 		}else {
 			$m = $PCE->getMessage();
@@ -111,13 +118,12 @@ class FactionListener implements Listener {
 			}
 		}
 	}
-	public function factionBlockBreakProtect(BlockBreakEvent $event) {
+	public function factionBlockBreakProtect(BlockBreakEvent $event) {	
 		if($this->plugin->pointIsInPlot($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) {
-			if( ($this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) == $this->plugin->getPlayerFaction($event->getPlayer()->getName())) {
-				return true;
-			} else {
+			if( ($this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) != $this->plugin->getPlayerFaction($event->getPlayer()->getName())) {
 				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage("[FactionsPro] You cannot break blocks here.");
+				$faction = $this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ());
+				$event->getPlayer()->sendMessage("[FactionsPro] This area is claimed by $faction");
 				return true;
 			}
 		}
@@ -125,11 +131,10 @@ class FactionListener implements Listener {
 	
 	public function factionBlockPlaceProtect(BlockPlaceEvent $event) {
 		if($this->plugin->pointIsInPlot($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) {
-			if( ($this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) == $this->plugin->getPlayerFaction($event->getPlayer()->getName())) {
-				return true;
-			} else {
+		if( ($this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ())) != $this->plugin->getPlayerFaction($event->getPlayer()->getName())) {
 				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage("[FactionsPro] You cannot place blocks here.");
+				$faction = $this->plugin->factionFromPoint($event->getBlock()->getFloorX(), $event->getBlock()->getFloorZ());
+				$event->getPlayer()->sendMessage("[FactionsPro] This area is claimed by $faction");
 				return true;
 			}
 		}
