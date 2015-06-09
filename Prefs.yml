@@ -3,5 +3,3 @@ MaxPlayersPerFaction: 10
 OnlyLeadersAndOfficersCanInvite: true
 OfficersCanClaim: true
 PlotSize: 25
-OfficerIdentifier: '*'
-LeaderIdentifier: '**'
