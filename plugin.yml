@@ -3,7 +3,7 @@ author: Tethered_
 description: A Plugin For Easily Managing Factions
 version: 1.3.0
 main: FactionsPro\FactionMain
-api: [1.4.0]
+api: [1.12.0]
 commands:
   f:
     description: use /f help for all parameters

@@ -2,20 +2,6 @@
 
 namespace FactionsPro;
 
-/*
- * 
- * v1.3.0 To Do List
- * [X] Separate into Command, Listener, and Main files
- * [ ] Implement commands (plot claim, plot del)
- * [ ] Get plots to work
- * [X] Add plot to config
- * [ ] Add faction description /f desc <faction>
- * [ ] Only leaders can edit motd, only members can check
- * [ ] More beautiful looking (and working) config
- * 
- * 
- */
-
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -30,7 +16,6 @@ use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
-
 
 class FactionMain extends PluginBase implements Listener {
 	
@@ -125,7 +110,7 @@ class FactionMain extends PluginBase implements Listener {
 	
 	public function isNameBanned($name) {
 		$bannedNames = explode(":", file_get_contents($this->getDataFolder() . "BannedNames"));
-		return !in_array($name, $bannedNames);
+		return in_array($name, $bannedNames);
 	}
 	
 public function newPlot($faction, $x1, $z1, $x2, $z2) {
@@ -208,6 +193,19 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$result = $stmt->execute();
 		
 		$this->db->query("DELETE FROM motdrcv WHERE player='$player';");
+	}
+	
+	public function updateTag($player) {
+		$p = $this->getServer()->getPlayer($player);
+		if(!$this->isInFaction($player)) {
+			$p->setNameTag($player);
+		} elseif($this->isLeader($player)) {
+			$p->setNameTag("**[" . $this->getPlayerFaction($player) . "] " . $player);
+		} elseif($this->isOfficer($player)) {
+			$p->setNameTag("*[" . $this->getPlayerFaction($player) . "] " . $player);
+		} elseif($this->isMember($player)) {
+			$p->setNameTag("[" . $this->getPlayerFaction($player) . "] " . $player);
+		}
 	}
 	
 	public function onDisable() {

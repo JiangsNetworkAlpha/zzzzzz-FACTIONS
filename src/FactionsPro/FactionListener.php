@@ -18,7 +18,6 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 
-
 class FactionListener implements Listener {
 	
 	public $plugin;
@@ -32,9 +31,6 @@ class FactionListener implements Listener {
 		$player = strtolower($PCE->getPlayer()->getName());
 		//MOTD Check
 		//TODO Use arrays instead of database for faster chatting?
-		$this->plugin->getServer()->getLogger()->info($this->plugin->motdWaiting($player));
-		$this->plugin->getServer()->getLogger()->info($this->plugin->getMOTDTime($player));
-		$this->plugin->getServer()->getLogger()->info(time());
 		
 		if($this->plugin->motdWaiting($player)) {
 			if(time() - $this->plugin->getMOTDTime($player) > 30) {
@@ -49,44 +45,39 @@ class FactionListener implements Listener {
 				$PCE->setCancelled(true);
 				$PCE->getPlayer()->sendMessage($this->plugin->formatMessage("Successfully updated faction message of the day!", true));
 			}
+			return true;
 		}
-		return true;
 		
-		//Member Chat
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isMember($PCE->getPlayer()->getName()) == true) {
+		//Member
+		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isMember($PCE->getPlayer()->getName())) {
 			$message = $PCE->getMessage();
 			$player = $PCE->getPlayer()->getName();
 			$faction = $this->plugin->getPlayerFaction($player);
 			
 			$PCE->setFormat("[$faction] $player: $message");
-			
-			
-		}
-		//Officer Chat
-		if($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isOfficer($PCE->getPlayer()->getName()) == true) {
-			$m = $PCE->getMessage();
-			$p = $PCE->getPlayer()->getName();
-			$lowerp = strtolower($p);
-			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
-			$result = $stmt->fetchArray(SQLITE3_ASSOC);
-			$f = $result["faction"];
-			$PCE->setFormat("[*$f] $p: $m");
 			return true;
 		}
-		//Leader Chat
-		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) == true && $this->plugin->isLeader($PCE->getPlayer()->getName()) == true) {
-			$m = $PCE->getMessage();
-			$p = $PCE->getPlayer()->getName();
-			$lowerp = strtolower($p);
-			$stmt = $this->plugin->db->query("SELECT * FROM master WHERE player='$p';");
-			$result = $stmt->fetchArray(SQLITE3_ASSOC);
-			$f = $result["faction"];
-			$PCE->setFormat("[**$f] $p: $m");
+		//Officer
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isOfficer($PCE->getPlayer()->getName())) {
+			$message = $PCE->getMessage();
+			$player = $PCE->getPlayer()->getName();
+			$faction = $this->plugin->getPlayerFaction($player);
+			
+			$PCE->setFormat("*[$faction] $player: $message");
 			return true;
+		}
+		//Leader
+		elseif($this->plugin->isInFaction($PCE->getPlayer()->getName()) && $this->plugin->isLeader($PCE->getPlayer()->getName())) {
+			$message = $PCE->getMessage();
+			$player = $PCE->getPlayer()->getName();
+			$faction = $this->plugin->getPlayerFaction($player);
+			$PCE->setFormat("**[$faction] $player: $message");
+			return true;
+		//Not in faction
 		}else {
-			$m = $PCE->getMessage();
-			$p = $PCE->getPlayer()->getName();
-			$PCE->setFormat("$p: $m");
+			$message = $PCE->getMessage();
+			$player = $PCE->getPlayer()->getName();
+			$PCE->setFormat("$player: $message");
 		}
 	}
 	
@@ -131,4 +122,7 @@ class FactionListener implements Listener {
 		}
 	}
 	
+	public function onPlayerJoin(PlayerJoinEvent $event) {
+		$this->plugin->updateTag($event->getPlayer()->getName());
+	}
 }
