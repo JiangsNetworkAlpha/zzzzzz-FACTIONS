@@ -88,7 +88,7 @@ class FactionCommands {
 						}
 						$invited = $this->plugin->getServer()->getPlayerExact($args[1]);
 						if($this->plugin->isInFaction($invited) == true) {
-							$sender->sendMessage($this->plugin->formatMessage("Player is currently in a faction."));
+							$sender->sendMessage($this->plugin->formatMessage("Player is currently in a faction"));
 							return true;
 						}
 						if($this->plugin->prefs->get("OnlyLeadersCanInvite") & !($this->plugin->isLeader($player))) {
@@ -292,6 +292,19 @@ class FactionCommands {
 							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
 						}
 					}
+					if(strtolower($args[0]) == "help") {
+						if(!isset($args[1]) || $args[1] == 1) {
+							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 1 of 3" . TextFormat::RED . "\n/f about\n/f accept\n/f claim\n/f create <name>\n/f del\n/f demote <player>\n/f deny");
+							return true;
+						}
+						if($args[1] == 2) {
+							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 2 of 3" . TextFormat::RED . "\n/f home\n/f help <page>\n/f info\n/f info <faction>\n/f invite <player>\n/f kick <player>\n/f leader <player>\n/f leave");
+							return true;
+						} else {
+							$sender->sendMessage(TextFormat::BLUE . "FactionsPro Help Page 3 of 3" . TextFormat::RED . "\n/f motd\n/f promote <player>\n/f sethome\n/f unclaim\n/f unsethome");
+							return true;
+						}
+					}
 				}
 				if(count($args == 1)) {
 					
@@ -484,11 +497,6 @@ class FactionCommands {
 					
 					if(strtolower($args[0] == 'about')) {
 						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.3.0 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
-					}
-					
-					if(strtolower($args[0]) == "help") {
-						$sender->sendMessage(TextFormat::BLUE . "FactionsPro Commands" . TextFormat::RED . "\n/f create <name>\n/f del\n/f help\n/f 
-								 <player>\n/f kick <player>\n/f leave\n/f leader <player>\n/f leave\n/f motd\n/f info");
 					}
 				} else {
 					$sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));

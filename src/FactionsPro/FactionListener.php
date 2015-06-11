@@ -18,6 +18,7 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\event\player\PlayerMoveEvent;
 use pocketmine\event\block\BlockPlaceEvent;
 
+
 class FactionListener implements Listener {
 	
 	public $plugin;

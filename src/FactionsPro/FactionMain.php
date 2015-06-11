@@ -2,6 +2,20 @@
 
 namespace FactionsPro;
 
+/*
+ * 
+ * v1.3.0 To Do List
+ * [X] Separate into Command, Listener, and Main files
+ * [ ] Implement commands (plot claim, plot del)
+ * [ ] Get plots to work
+ * [X] Add plot to config
+ * [ ] Add faction description /f desc <faction>
+ * [ ] Only leaders can edit motd, only members can check
+ * [ ] More beautiful looking (and working) config
+ * 
+ * 
+ */
+
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -17,13 +31,21 @@ use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
 
+
 class FactionMain extends PluginBase implements Listener {
 	
 	public $db;
 	public $prefs;
 	
 	public function onEnable() {
+		
 		@mkdir($this->getDataFolder());
+		
+		if(!file_exists($this->getDataFolder() . "BannedNames.txt")) {
+			$file = fopen($this->getDataFolder() . "BannedNames.txt", "w");
+			$txt = "Admin:admin:Staff:staff:Owner:owner:Builder:builder:Op:OP:op";
+			fwrite($file, $txt);
+		}
 		
 		$this->getServer()->getPluginManager()->registerEvents(new FactionListener($this), $this);
 		$this->fCommand = new FactionCommands($this);
@@ -109,7 +131,7 @@ class FactionMain extends PluginBase implements Listener {
 	}
 	
 	public function isNameBanned($name) {
-		$bannedNames = explode(":", file_get_contents($this->getDataFolder() . "BannedNames"));
+		$bannedNames = explode(":", file_get_contents($this->getDataFolder() . "BannedNames.txt"));
 		return in_array($name, $bannedNames);
 	}
 	
@@ -167,9 +189,9 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 	
 	public function formatMessage($string, $confirm = false) {
 		if($confirm) {
-			return TextFormat::BLUE . "[FactionsPro] " . TextFormat::GREEN . "$string";
+			return "[" . TextFormat::BLUE . "FactionsPro" . TextFormat::WHITE . "] " . TextFormat::GREEN . "$string";
 		} else {	
-			return TextFormat::BLUE . "[FactionsPro] " . TextFormat::RED . "$string";
+			return "[" . TextFormat::BLUE . "FactionsPro" . TextFormat::WHITE . "] " . TextFormat::RED . "$string";
 		}
 	}
 	
