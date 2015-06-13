@@ -312,10 +312,12 @@ class FactionCommands {
 					
 					if(strtolower($args[0]) == 'claim') {
 						if(!$this->plugin->isInFaction($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be in a faction."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction."));
+							return true;
 						}
 						if(!$this->plugin->isLeader($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be leader to use this."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this."));
+							return true;
 						}
 						$x = floor($sender->getX());
 						$y = floor($sender->getY());
@@ -368,7 +370,7 @@ class FactionCommands {
 						}
 						$invitedTime = $array["timestamp"];
 						$currentTime = time();
-						if( ($currentTime - $invitedTime) <= 60 ) { //This should be configurable
+						if(($currentTime - $invitedTime) <= 60) { //This should be configurable
 							$faction = $array["faction"];
 							$stmt = $this->plugin->db->prepare("INSERT OR REPLACE INTO master (player, faction, rank) VALUES (:player, :faction, :rank);");
 							$stmt->bindValue(":player", strtolower($player));
@@ -444,10 +446,11 @@ class FactionCommands {
 					
 					if(strtolower($args[0] == "sethome")) {
 						if(!$this->plugin->isInFaction($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
+							return true;
 						}
 						if(!$this->plugin->isLeader($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be leader to set home."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be leader to set home."));
 							return true;
 						}
 						$factionName = $this->plugin->getPlayerFaction($sender->getName());
@@ -464,10 +467,11 @@ class FactionCommands {
 						
 					if(strtolower($args[0] == "unsethome")) {
 						if(!$this->plugin->isInFaction($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
+							return true;
 						}
 						if(!$this->plugin->isLeader($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be leader to unset home."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be leader to unset home."));
 							return true;
 						}
 						$faction = $this->plugin->getPlayerFaction($sender->getName());
@@ -479,7 +483,7 @@ class FactionCommands {
 						
 					if(strtolower($args[0] == "home")) {
 						if(!$this->plugin->isInFaction($player)) {
-							$player->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
+							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction to do this."));
 						}
 						$faction = $this->plugin->getPlayerFaction($sender->getName());
 						$result = $this->plugin->db->query("SELECT * FROM home WHERE faction = '$faction';");
