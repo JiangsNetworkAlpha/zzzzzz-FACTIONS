@@ -148,12 +148,14 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$arm = ($size - 1) / 2;
 		$block = new Snow();
 		if($this->cornerIsInPlot($x + $arm, $z + $arm, $x - $arm, $z - $arm)) {
-			$sender->sendMessage($this->formatMessage("Cannot place plot here."));
-			return true;
+			$claimedBy = $this->factionFromPoint($x, $z);
+			$sender->sendMessage($this->formatMessage("This area is aleady claimed by $claimedBy."));
+			return false;
 		}
 		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
 		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
 		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
+		return true;
 	}
 	
 	public function isInPlot($player) {

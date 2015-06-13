@@ -31,6 +31,7 @@ class FactionCommands {
 			if(strtolower($command->getName('f'))) {
 				if(empty($args)) {
 					$sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
+					return true;
 				}
 				if(count($args == 2)) {
 					
@@ -244,11 +245,11 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
 							return true;
 						}
-						if($this->plugin->getPlayerFaction($player) != $this->getPlayerFaction($args[1])) {
+						if($this->plugin->getPlayerFaction($player) != $this->$args[1]) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 							return true;
 						}
-						$kicked = $this->plugin->getServer()->getPlayerExact($args[1]);
+						$kicked = $this->plugin->getServer()->getPlayer($args[1]);
 						$factionName = $this->plugin->getPlayerFaction($player);
 						$this->plugin->db->query("DELETE FROM master WHERE player='$args[1]';");
 						$sender->sendMessage($this->plugin->formatMessage("You successfully kicked $args[1]!", true));
@@ -319,11 +320,17 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this."));
 							return true;
 						}
+						if($this->plugin->inOwnPlot($sender)) {
+							$sender->sendMessage($this->plugin->formatMessage("Your faction has already claimed this area."));
+							return true;
+						}
 						$x = floor($sender->getX());
 						$y = floor($sender->getY());
 						$z = floor($sender->getZ());
 						$faction = $this->plugin->getPlayerFaction($sender->getPlayer()->getName());
-						$this->plugin->drawPlot($player, $faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize"));
+						if($this->plugin->drawPlot($sender, $faction, $x, $y, $z, $sender->getPlayer()->getLevel(), $this->plugin->prefs->get("PlotSize")) == false) {
+							return true;
+						}
 						$sender->sendMessage($this->plugin->formatMessage("Plot claimed.", true));
 					}
 					
@@ -502,8 +509,6 @@ class FactionCommands {
 					if(strtolower($args[0] == 'about')) {
 						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.3.0 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
 					}
-				} else {
-					$sender->sendMessage($this->plugin->formatMessage("Please use /f help for a list of commands"));
 				}
 			}
 		} else {
