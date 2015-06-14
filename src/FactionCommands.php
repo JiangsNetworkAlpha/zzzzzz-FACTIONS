@@ -92,8 +92,8 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("Player is currently in a faction"));
 							return true;
 						}
-						if($this->plugin->prefs->get("OnlyLeadersCanInvite") & !($this->plugin->isLeader($player))) {
-							$sender->sendMessage($this->plugin->formatMessage("Only your faction leader may invite!"));
+						if($this->plugin->prefs->get("OnlyLeadersAndOfficersCanInvite") && !($this->plugin->isLeader($player))) {
+							$sender->sendMessage($this->plugin->formatMessage("You are not allowed to invite."));
 							return true;
 						}
 						if(!$invited instanceof Player) {
@@ -128,15 +128,19 @@ class FactionCommands {
 						}
 						if(!$this->plugin->isInFaction($sender->getName())) {
 							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction to use this!"));
+							return true;
 						}
 						if(!$this->plugin->isLeader($player)) {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
+							return true;
 						}
 						if($this->plugin->getPlayerFaction($player) != $this->plugin->getPlayerFaction($args[1])) {
 							$sender->sendMessage($this->plugin->formatMessage("Add player to faction first!"));
+							return true;
 						}		
 						if(!$this->plugin->getServer()->getPlayerExact($args[1])->isOnline()) {
 							$sender->sendMessage($this->plugin->formatMessage("Player not online!"));
+							return true;
 						}
 							$factionName = $this->plugin->getPlayerFaction($player);
 							$factionName = $this->plugin->getPlayerFaction($player);
@@ -312,8 +316,16 @@ class FactionCommands {
 					/////////////////////////////// CLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == 'claim') {
+						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
+							return true;
+						}
 						if(!$this->plugin->isInFaction($player)) {
 							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction."));
+							return true;
+						}
+						if($this->plugin->prefs->get("OfficersCanClaim") == "false" && $this->plugin->isOfficer($sender->getName())) {
+							$sender->sendMessage($this->plugin->formatMessage("You are not allowed to claim."));
 							return true;
 						}
 						if(!$this->plugin->isLeader($player)) {
@@ -337,6 +349,10 @@ class FactionCommands {
 					/////////////////////////////// UNCLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == "unclaim") {
+						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
+							return true;
+						}
 						if(!$this->plugin->isLeader($sender->getName())) {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this."));
 							return true;
