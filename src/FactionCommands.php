@@ -249,7 +249,7 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
 							return true;
 						}
-						if($this->plugin->getPlayerFaction($player) != $this->$args[1]) {
+						if($this->plugin->getPlayerFaction($player) != $this->plugin->getPlayerFaction($args[1])) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 							return true;
 						}
