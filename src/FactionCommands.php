@@ -319,7 +319,7 @@ class FactionCommands {
 					/////////////////////////////// CLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == 'claim') {
-						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
 							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
 							return true;
 						}
@@ -327,7 +327,7 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction."));
 							return true;
 						}
-						if($this->plugin->prefs->get("OfficersCanClaim") == "false" && $this->plugin->isOfficer($sender->getName())) {
+						if($this->plugin->prefs->get("OfficersCanClaim") == false && $this->plugin->isOfficer($sender->getName())) {
 							$sender->sendMessage($this->plugin->formatMessage("You are not allowed to claim."));
 							return true;
 						}
@@ -352,7 +352,7 @@ class FactionCommands {
 					/////////////////////////////// UNCLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == "unclaim") {
-						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
 							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
 							return true;
 						}
