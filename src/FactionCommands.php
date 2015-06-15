@@ -409,7 +409,7 @@ class FactionCommands {
 							$this->plugin->updateTag($sender->getName());
 						} else {
 							$sender->sendMessage($this->plugin->formatMessage("Invite has timed out!"));
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$player';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 						}
 					}
 					
