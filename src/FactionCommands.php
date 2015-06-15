@@ -274,6 +274,9 @@ class FactionCommands {
 								return true;
 							}
 							$faction = strtolower($args[1]);
+							$result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
+							$array = $result->fetchArray(SQLITE3_ASSOC);
+							$message = $array["message"];
 							$leader = $this->plugin->getLeader($faction);
 							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
 							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
