@@ -427,12 +427,12 @@ class FactionCommands {
 						$invitedTime = $array["timestamp"];
 						$currentTime = time();
 						if( ($currentTime - $invitedTime) <= 60 ) { //This should be configurable
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 							$sender->sendMessage($this->plugin->formatMessage("Invite declined!", true));
 							$this->plugin->getServer()->getPlayerExact($array["invitedby"])->sendMessage($this->plugin->formatMessage("$player declined the invite!"));
 						} else {
 							$sender->sendMessage($this->plugin->formatMessage("Invite has timed out!"));
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 						}
 					}
 					
