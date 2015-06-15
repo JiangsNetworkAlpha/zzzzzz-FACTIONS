@@ -53,6 +53,7 @@ class FactionMain extends PluginBase implements Listener {
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
 				"MaxFactionNameLength" => 20,
 				"MaxPlayersPerFaction" => 10,
+				"ClaimingEnabled" => true,
 				"OnlyLeadersAndOfficersCanInvite" => true,
 				"OfficersCanClaim" => true,
 				"PlotSize" => 25,

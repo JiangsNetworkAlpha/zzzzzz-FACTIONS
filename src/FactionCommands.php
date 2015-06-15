@@ -249,7 +249,7 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
 							return true;
 						}
-						if($this->plugin->getPlayerFaction($player) != $this->$args[1]) {
+						if($this->plugin->getPlayerFaction($player) != $this->plugin->getPlayerFaction($args[1])) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 							return true;
 						}
@@ -274,6 +274,9 @@ class FactionCommands {
 								return true;
 							}
 							$faction = strtolower($args[1]);
+							$result = $this->plugin->db->query("SELECT * FROM motd WHERE faction='$faction';");
+							$array = $result->fetchArray(SQLITE3_ASSOC);
+							$message = $array["message"];
 							$leader = $this->plugin->getLeader($faction);
 							$numPlayers = $this->plugin->getNumberOfPlayers($faction);
 							$sender->sendMessage(TextFormat::BOLD . "-------------------------");
@@ -316,7 +319,7 @@ class FactionCommands {
 					/////////////////////////////// CLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == 'claim') {
-						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
 							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
 							return true;
 						}
@@ -324,7 +327,7 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be in a faction."));
 							return true;
 						}
-						if($this->plugin->prefs->get("OfficersCanClaim") == "false" && $this->plugin->isOfficer($sender->getName())) {
+						if($this->plugin->prefs->get("OfficersCanClaim") == false && $this->plugin->isOfficer($sender->getName())) {
 							$sender->sendMessage($this->plugin->formatMessage("You are not allowed to claim."));
 							return true;
 						}
@@ -349,7 +352,7 @@ class FactionCommands {
 					/////////////////////////////// UNCLAIM ///////////////////////////////
 					
 					if(strtolower($args[0]) == "unclaim") {
-						if($this->plugin->prefs->get("ClaimingEnabled") == "false") {
+						if($this->plugin->prefs->get("ClaimingEnabled") == false) {
 							$sender->sendMessage($this->plugin->formatMessage("Plots are not enabled on this server."));
 							return true;
 						}
@@ -406,7 +409,7 @@ class FactionCommands {
 							$this->plugin->updateTag($sender->getName());
 						} else {
 							$sender->sendMessage($this->plugin->formatMessage("Invite has timed out!"));
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$player';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 						}
 					}
 					
@@ -424,12 +427,12 @@ class FactionCommands {
 						$invitedTime = $array["timestamp"];
 						$currentTime = time();
 						if( ($currentTime - $invitedTime) <= 60 ) { //This should be configurable
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 							$sender->sendMessage($this->plugin->formatMessage("Invite declined!", true));
 							$this->plugin->getServer()->getPlayerExact($array["invitedby"])->sendMessage($this->plugin->formatMessage("$player declined the invite!"));
 						} else {
 							$sender->sendMessage($this->plugin->formatMessage("Invite has timed out!"));
-							$this->plugin->db->query("DELETE * FROM confirm WHERE player='$lowercaseName';");
+							$this->plugin->db->query("DELETE FROM confirm WHERE player='$lowercaseName';");
 						}
 					}
 					
