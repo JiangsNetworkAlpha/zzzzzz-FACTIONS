@@ -138,7 +138,7 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("Add player to faction first!"));
 							return true;
 						}		
-						if(!$this->plugin->getServer()->getPlayerExact($args[1])->isOnline()) {
+						if(!$this->plugin->getServer()->getPlayerExact($args[1]) instanceof Player) {
 							$sender->sendMessage($this->plugin->formatMessage("Player not online!"));
 							return true;
 						}
