@@ -2,20 +2,6 @@
 
 namespace FactionsPro;
 
-/*
- * 
- * v1.3.0 To Do List
- * [X] Separate into Command, Listener, and Main files
- * [ ] Implement commands (plot claim, plot del)
- * [ ] Get plots to work
- * [X] Add plot to config
- * [ ] Add faction description /f desc <faction>
- * [ ] Only leaders can edit motd, only members can check
- * [ ] More beautiful looking (and working) config
- * 
- * 
- */
-
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -30,7 +16,6 @@ use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
-
 
 class FactionMain extends PluginBase implements Listener {
 	
@@ -57,6 +42,30 @@ class FactionMain extends PluginBase implements Listener {
 				"OnlyLeadersAndOfficersCanInvite" => true,
 				"OfficersCanClaim" => true,
 				"PlotSize" => 25,
+				"Member" => array(
+						"claim" => false,
+						"demote" => false,
+						"home" => true,
+						"invite" => false,
+						"kick" => false,
+						"motd" => false,
+						"promote" => false,
+						"sethome" => false,
+						"unclaim" => false,
+						"unsethome" => false,
+				""),
+				"Officer" => array(
+						"claim" => true,
+						"demote" => false,
+						"home" => true,
+						"invite" => true,
+						"kick" => true,
+						"motd" => true,
+						"promote" => false,
+						"sethome" => true,
+						"unclaim" => true,
+						"unsethome" => true,
+				"")
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
@@ -64,12 +73,13 @@ class FactionMain extends PluginBase implements Listener {
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT, world VARCHAR);");
 	}
 		
 	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
 		$this->fCommand->onCommand($sender, $command, $label, $args);
 	}
+	
 	public function isInFaction($player) {
 		$player = strtolower($player);
 		$result = $this->db->query("SELECT * FROM master WHERE player='$player';");
@@ -93,6 +103,17 @@ class FactionMain extends PluginBase implements Listener {
 		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
 		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
 		return $factionArray["rank"] == "Member";
+	}
+	
+	public function getRank($player) {
+		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
+		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
+		return $factionArray["rank"];
+	}
+	
+	public function hasPermission($player, $command) {
+		$rank = $this->getRank($player);
+		return $this->prefs->get("$rank")["$command"];
 	}
 	
 	public function getPlayerFaction($player) {
