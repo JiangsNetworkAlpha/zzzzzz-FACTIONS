@@ -52,8 +52,8 @@ class FactionMain extends PluginBase implements Listener {
 						"promote" => false,
 						"sethome" => false,
 						"unclaim" => false,
-						"unsethome" => false,
-				""),
+						"unsethome" => false
+				),
 				"Officer" => array(
 						"claim" => true,
 						"demote" => false,
@@ -64,8 +64,8 @@ class FactionMain extends PluginBase implements Listener {
 						"promote" => false,
 						"sethome" => true,
 						"unclaim" => true,
-						"unsethome" => true,
-				"")
+						"unsethome" => true
+				)
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
@@ -222,7 +222,6 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 	public function motdWaiting($player) {
 		$stmt = $this->db->query("SELECT * FROM motdrcv WHERE player='$player';");
 		$array = $stmt->fetchArray(SQLITE3_ASSOC);
-		$this->getServer()->getLogger()->info("\$player = " . $player);
 		return !empty($array);
 	}
 	

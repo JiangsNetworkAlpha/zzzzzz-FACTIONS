@@ -235,7 +235,7 @@ class FactionCommands {
 						$stmt->bindValue(":faction", $factionName);
 						$stmt->bindValue(":rank", "Member");
 						$result = $stmt->execute();
-						$player = $args[1];
+						$player = $this->plugin->getServer()->getPlayer($args[1]);
 						$sender->sendMessage($this->plugin->formatMessage("" . $player->getName() . " has been demoted to Member.", true));
 						
 						if($player = $this->plugin->getServer()->getPlayer($args[1])) {
@@ -552,7 +552,7 @@ class FactionCommands {
 					/////////////////////////////// ABOUT ///////////////////////////////
 					
 					if(strtolower($args[0] == 'about')) {
-						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.3.0 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
+						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.4.0 BETA by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
 					}
 				}
 			}
