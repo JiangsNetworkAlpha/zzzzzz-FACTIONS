@@ -273,7 +273,7 @@ class FactionCommands {
 						$sender->sendMessage($this->plugin->formatMessage("You successfully kicked $args[1]!", true));
 						$players[] = $this->plugin->getServer()->getOnlinePlayers();
 						if(in_array($args[1], $players) == true) {
-							$this->plugin->getServer()->getPlayer($args[1])->sendMessage($this->plugin->formatMessage("You have been kicked from \n $factionName!, true"));
+							$this->plugin->getServer()->getPlayer($args[1])->sendMessage($this->plugin->formatMessage("You have been kicked from \n $factionName!", true));
 							if($this->plugin->prefs->get("FactionNametags")) {
 								$this->plugin->updateTag($args[1]);
 							}
