@@ -12,6 +12,6 @@ permissions:
   f.command:
     default: true
     description: "Allow use of all faction commands"
-  fac.override:
+  f.override:
     default: op
     description: "Allows op users to override factions"
