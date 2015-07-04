@@ -99,33 +99,32 @@ class FactionListener implements Listener {
 			}
 		}
 	}
-	public function factionBlockBreakProtect(BlockBreakEvent $event) {
-		if($this->plugin->isInPlot($event->getPlayer())) {
-			if($this->plugin->inOwnPlot($event->getPlayer())) {
-				return true;
-			} else {
-				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot break blocks here."));
-				return true;
+    public function factionBlockBreakProtect(BlockBreakEvent $event)
+    {
+        if ($this->plugin->isInPlot($event->getPlayer())) {
+            if ($this->plugin->inOwnPlot($event->getPlayer())) {
+                return true;
+            } elseif ($event->getPlayer()->hasPermission("f.override")) {
+                return true;
+            } else
+                $event->setCancelled(true);
+            $event->getPlayer()->sendPopup("§cThis area is already claimed. - Run /f help");
+            return true;
+        }
+    }
+
+
+    public function factionBlockPlaceProtect(BlockPlaceEvent $event)
+    {
+        if ($this->plugin->isInPlot($event->getPlayer())) {
+            if ($this->plugin->inOwnPlot($event->getPlayer())) {
+                return true;
+            } elseif ($event->getPlayer()->hasPermission("f.override")) {
+                return true;
+            } else
+                $event->setCancelled(true);
+            $event->getPlayer()->sendPopup("§cThis area is already claimed. - Run /f help");
+            return true;
 			}
 		}
 	}
-	
-	public function factionBlockPlaceProtect(BlockPlaceEvent $event) {
-		if($this->plugin->isInPlot($event->getPlayer())) {
-			if($this->plugin->inOwnPlot($event->getPlayer())) {
-				return true;
-			} else {
-				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot place blocks here."));
-				return true;
-			}
-		}
-	}
-	
-	public function onPlayerJoin(PlayerJoinEvent $event) {
-		if($this->plugin->prefs->get("FactionNametags")) {
-			$this->plugin->updateTag($event->getPlayer()->getName());
-		}
-	}
-}
