@@ -2,6 +2,20 @@
 
 namespace FactionsPro;
 
+/*
+ * 
+ * v1.3.0 To Do List
+ * [X] Separate into Command, Listener, and Main files
+ * [ ] Implement commands (plot claim, plot del)
+ * [ ] Get plots to work
+ * [X] Add plot to config
+ * [ ] Add faction description /f desc <faction>
+ * [ ] Only leaders can edit motd, only members can check
+ * [ ] More beautiful looking (and working) config
+ * 
+ * 
+ */
+
 use pocketmine\plugin\PluginBase;
 use pocketmine\command\CommandSender;
 use pocketmine\command\Command;
@@ -16,19 +30,40 @@ use pocketmine\utils\Config;
 use pocketmine\event\entity\EntityDamageEvent;
 use pocketmine\block\Snow;
 use pocketmine\math\Vector3;
+use pocketmine\level\Level;
+use FactionsPro\utils\Session;
 
-class FactionMain extends PluginBase implements Listener {
+
+class FactionMain extends PluginBase implements Listener
+{
 	
 	public $db;
 	public $prefs;
+	public $factions = array();
+	public $sessions = array();
 	
-	public function onEnable() {
-		
+	public function onEnable()
+	{	
 		@mkdir($this->getDataFolder());
 		
-		if(!file_exists($this->getDataFolder() . "BannedNames.txt")) {
+		if(!file_exists($this->getDataFolder() . "Factions.fp"))
+		{
+			$file = fopen($this->getDataFolder() . "Factions.fp", "w");
+			$txt = "";
+			fwrite($file, $txt);
+		}
+		
+		if(!file_exists($this->getDataFolder() . "BannedNames.txt"))
+		{
 			$file = fopen($this->getDataFolder() . "BannedNames.txt", "w");
 			$txt = "Admin:admin:Staff:staff:Owner:owner:Builder:builder:Op:OP:op";
+			fwrite($file, $txt);
+		}
+		
+		if(!file_exists($this->getDataFolder() . "NoClaimWorlds.txt"))
+		{
+			$file = fopen($this->getDataFolder() . "NoClaimWorlds.txt", "w");
+			$txt = "Delete the contents of this file and replace with the names of the worlds which you would like claiming to be disabled in this format: world1:world2:world3 leave this file empty if you wish to enable claiming in every world";
 			fwrite($file, $txt);
 		}
 		
@@ -38,118 +73,67 @@ class FactionMain extends PluginBase implements Listener {
 		$this->prefs = new Config($this->getDataFolder() . "Prefs.yml", CONFIG::YAML, array(
 				"MaxFactionNameLength" => 20,
 				"MaxPlayersPerFaction" => 10,
-				"ClaimingEnabled" => true,
 				"OnlyLeadersAndOfficersCanInvite" => true,
 				"OfficersCanClaim" => true,
 				"PlotSize" => 25,
-				"Member" => array(
-						"claim" => false,
-						"demote" => false,
-						"home" => true,
-						"invite" => false,
-						"kick" => false,
-						"motd" => false,
-						"promote" => false,
-						"sethome" => false,
-						"unclaim" => false,
-						"unsethome" => false
-				),
-				"Officer" => array(
-						"claim" => true,
-						"demote" => false,
-						"home" => true,
-						"invite" => true,
-						"kick" => true,
-						"motd" => true,
-						"promote" => false,
-						"sethome" => true,
-						"unclaim" => true,
-						"unsethome" => true
-				)
+				"PlaceSnowBlocksOnClaim" => true,
 		));
 		$this->db = new \SQLite3($this->getDataFolder() . "FactionsPro.db");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS master (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, rank TEXT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS confirm (player TEXT PRIMARY KEY COLLATE NOCASE, faction TEXT, invitedby TEXT, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motdrcv (player TEXT PRIMARY KEY, timestamp INT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS motd (faction TEXT PRIMARY KEY, message TEXT);");
 		$this->db->exec("CREATE TABLE IF NOT EXISTS plots(faction TEXT PRIMARY KEY, x1 INT, z1 INT, x2 INT, z2 INT);");
-		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT, world VARCHAR);");
+		$this->db->exec("CREATE TABLE IF NOT EXISTS home(faction TEXT PRIMARY KEY, x INT, y INT, z INT);");
+	
+		if(!empty(file_get_contents($this->getDataFolder() . "Factions.fp")))
+		{
+			$this->loadAll();
+		}
 	}
 		
-	public function onCommand(CommandSender $sender, Command $command, $label, array $args) {
+	public function onCommand(CommandSender $sender, Command $command, $label, array $args)
+	{
 		$this->fCommand->onCommand($sender, $command, $label, $args);
 	}
 	
-	public function isInFaction($player) {
-		$player = strtolower($player);
-		$result = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return empty($array) == false;
+	public function addFaction(Faction $faction)
+	{
+		array_push($this->factions, $faction);
 	}
 	
-	public function isLeader($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
-		return $factionArray["rank"] == "Leader";
+	public function removeFaction(Faction $faction)
+	{
+		$key = array_search($faction, $this->factions);
+		if($key !== false)
+		{
+			unset($this->factions[$key]);
+		}
 	}
 	
-	public function isOfficer($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
-		return $factionArray["rank"] == "Officer";
+	public function getFactions()
+	{
+		return $this->factions;
 	}
 	
-	public function isMember($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
-		return $factionArray["rank"] == "Member";
+	public function getFaction($name)
+	{
+		foreach($this->factions as $faction)
+		{
+			if($faction->getName() == $name)
+			{
+				return $faction;
+			}
+		}
+		return false;
 	}
 	
-	public function getRank($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
-		return $factionArray["rank"];
+	public function factionExists($faction)
+	{
+		return isset($this->factions[$faction]);
 	}
 	
-	public function hasPermission($player, $command) {
-		$rank = $this->getRank($player);
-		return $this->prefs->get("$rank")["$command"];
-	}
-	
-	public function getPlayerFaction($player) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player';");
-		$factionArray = $faction->fetchArray(SQLITE3_ASSOC);
-		return $factionArray["faction"];
-	}
-	
-	public function getLeader($faction) {
-		$leader = $this->db->query("SELECT * FROM master WHERE faction='$faction' AND rank='Leader';");
-		$leaderArray = $leader->fetchArray(SQLITE3_ASSOC);
-		return $leaderArray['player'];
-	}
-	
-	public function factionExists($faction) {
-		$result = $this->db->query("SELECT * FROM master WHERE faction='$faction';");
-		$array = $result->fetchArray(SQLITE3_ASSOC);
-		return empty($array) == false;
-	}
-	
-	public function sameFaction($player1, $player2) {
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player1';");
-		$player1Faction = $faction->fetchArray(SQLITE3_ASSOC);
-		$faction = $this->db->query("SELECT * FROM master WHERE player='$player2';");
-		$player2Faction = $faction->fetchArray(SQLITE3_ASSOC);
-		return $player1Faction["faction"] == $player2Faction["faction"];
-	}
-	
-	public function getNumberOfPlayers($faction) {
-		$query = $this->db->query("SELECT COUNT(*) as count FROM master WHERE faction='$faction';");
-		$number = $query->fetchArray();
-		return $number['count'];
-	}
-	
-	public function isFactionFull($faction) {
-		return $this->getNumberOfPlayers($faction) >= $this->prefs->get("MaxPlayersPerFaction");
+	public function sameFaction($player1, $player2) 
+	{
+		$this->getSession($player1)->getFaction() == $this->getSession($player2)->getFaction();
 	}
 	
 	public function isNameBanned($name) {
@@ -157,7 +141,13 @@ class FactionMain extends PluginBase implements Listener {
 		return in_array($name, $bannedNames);
 	}
 	
-public function newPlot($faction, $x1, $z1, $x2, $z2) {
+	public function claimingIsDisabled(Level $level)
+	{
+		$disabledWorlds = explode(":", file_get_contents($this->getDataFolder() . "NoClaimWorlds.txt"));
+		return in_array($level->getName(), $disabledWorlds);
+	}
+	
+	public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$stmt = $this->db->prepare("INSERT OR REPLACE INTO plots (faction, x1, z1, x2, z2) VALUES (:faction, :x1, :z1, :x2, :z2);");
 		$stmt->bindValue(":faction", $faction);
 		$stmt->bindValue(":x1", $x1);
@@ -166,6 +156,7 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$stmt->bindValue(":z2", $z2);
 		$result = $stmt->execute();
 	}
+	
 	public function drawPlot($sender, $faction, $x, $y, $z, $level, $size) {
 		$arm = ($size - 1) / 2;
 		$block = new Snow();
@@ -174,8 +165,10 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 			$sender->sendMessage($this->formatMessage("This area is aleady claimed by $claimedBy."));
 			return false;
 		}
-		$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
-		$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
+		if($this->prefs->get("PlaceSnowBlockOnClaim")) {
+			$level->setBlock(new Vector3($x + $arm, $y, $z + $arm), $block);
+			$level->setBlock(new Vector3($x - $arm, $y, $z - $arm), $block);
+		}
 		$this->newPlot($faction, $x + $arm, $z + $arm, $x - $arm, $z - $arm);
 		return true;
 	}
@@ -222,6 +215,7 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 	public function motdWaiting($player) {
 		$stmt = $this->db->query("SELECT * FROM motdrcv WHERE player='$player';");
 		$array = $stmt->fetchArray(SQLITE3_ASSOC);
+		$this->getServer()->getLogger()->info("\$player = " . $player);
 		return !empty($array);
 	}
 	
@@ -240,20 +234,60 @@ public function newPlot($faction, $x1, $z1, $x2, $z2) {
 		$this->db->query("DELETE FROM motdrcv WHERE player='$player';");
 	}
 	
-	public function updateTag($player) {
-		$p = $this->getServer()->getPlayer($player);
-		if(!$this->isInFaction($player)) {
-			$p->setNameTag($player);
-		} elseif($this->isLeader($player)) {
-			$p->setNameTag("**[" . $this->getPlayerFaction($player) . "] " . $player);
-		} elseif($this->isOfficer($player)) {
-			$p->setNameTag("*[" . $this->getPlayerFaction($player) . "] " . $player);
-		} elseif($this->isMember($player)) {
-			$p->setNameTag("[" . $this->getPlayerFaction($player) . "] " . $player);
+	public function saveAll()
+	{
+		$this->getServer()->getLogger()->info($this->formatMessage("Saving Factions..."));
+		$exportArray = [];
+		foreach($this->factions as $faction)
+		{
+			$exportArray[] = $faction->export();
+		}
+		$txt = implode("*", $exportArray);
+		$file = fopen($this->getDataFolder() . "Factions.fp", "w");
+		fwrite($file, $txt);
+		$this->getServer()->getLogger()->info($this->formatMessage("Factions Saved!", true));
+	}
+	
+	public function loadAll()
+	{
+		$this->getServer()->getLogger()->info($this->formatMessage("Loading Factions..."));
+		$file = explode("*", file_get_contents($this->getDataFolder() . "Factions.fp"));
+		foreach($file as $faction)
+		{
+			Faction::import($faction, $this);
+		}
+		$this->getServer()->getLogger()->info($this->formatMessage("Factions Loaded!", true));
+	}
+	
+	public function addSession(Player $player)
+	{
+		$this->sessions[$player->getId()] = new Session($this, $player);
+	}
+	
+	public function removeSession(Player $player)
+	{
+		if(isset($this->sessions[$id = $player->getId()])){
+			unset($this->sessions[$id]);
 		}
 	}
 	
-	public function onDisable() {
+	public function getSession(Player $player)
+	{
+		return isset($this->sessions[$id = $player->getId()]) ? $this->sessions[$id] : null;
+	}
+	
+	public function getSessionFromName($playerName)
+	{
+		if($player = $this->getServer()->getPlayer($playerName) instanceof Player)
+		{
+			return $this->getSession($player);
+		}
+		return false;
+	}
+	
+	public function onDisable()
+	{
+		$this->saveAll();
 		$this->db->close();
 	}
 }

@@ -3,6 +3,7 @@ MaxPlayersPerFaction: 10
 ClaimingEnabled: true
 FactionNametags: true
 PlotSize: 25
+PlaceSnowBlocksOnClaim: true
 Member:
   claim: false
   demote: false
