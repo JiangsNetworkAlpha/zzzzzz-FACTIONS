@@ -102,12 +102,13 @@ class FactionMain extends PluginBase implements Listener
 	{
 		$key = array_search($faction, $this->factions);
 		if($key !== false)
+		$name = $faction->getName();
 		{
 			unset($this->factions[$key]);
 			{
 				if($this->devModeEnabled())
 				{
-					$this->getServer()->getLogger(TextFormat::GREEN . "" . $this->factions[$key] . " has been removed");
+					$this->getServer()->getLogger(TextFormat::GREEN . "" . $name . " has been disbanded");
 				}
 			}
 		}
@@ -199,7 +200,7 @@ class FactionMain extends PluginBase implements Listener
 	{
 		if($player = $this->getServer()->getPlayer($playerName) instanceof Player)
 		{
-			return $this->getSession($player);
+			return $this->getSession($this->getServer()->getPlayer($playerName));
 		}
 		return false;
 	}

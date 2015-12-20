@@ -172,20 +172,21 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
 							return true;
 						}
-						if($ses->getFaction() != $this->plugin->getSession($this->plugin->getServer()->getPlayer($args[1]))->getFaction()) {
+						if(!$ses->getFaction()->hasPlayer_string($args[1])) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 							return true;
 						}
-						if($this->plugin->getSession($this->plugin->getServer()->getPlayer($args[1]))->isOfficer()) {
+						$demoted = $this->plugin->getSessionFromName($args[1]);
+						if(strcmp($ses->getFaction()->getRank_string($args[1]),"Officer") == 0) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is already Officer"));
 							return true;
 						}
-						$promoted = $this->plugin->getSession($this->plugin->getServer()->getPlayer($args[1]));
-						$ses->getFaction()->setRank($promoted->getPlayer(), "Officer");
-						$sender->sendMessage($this->plugin->formatMessage("" . $promoted->getPlayer()->getName() . " has been promoted to Officer!", true));
-						$promoted->getPlayer()->sendMessage($this->plugin->formatMessage("You are now Officer!", true));
-						$promoted->updateRank();
-						$promoted->updateTag();
+						$ses->getFaction()->setRank_string($args[1], "Officer");
+						$sender->sendMessage($this->plugin->formatMessage("" . $args[1] . " has been promoted to Officer.", true));
+						if(!$promoted == false) { $demoted->getPlayer()->sendMessage($this->plugin->formatMessage("You were Promoted to Officer.", true));
+							$promoted->updateRank();
+							$promoted->updateTag();
+						}
 					}
 					
 					/////////////////////////////// DEMOTE ///////////////////////////////
@@ -207,20 +208,21 @@ class FactionCommands {
 							$sender->sendMessage($this->plugin->formatMessage("You must be leader to use this"));
 							return true;
 						}
-						$demoted = $this->plugin->getSession($this->plugin->getServer()->getPlayer($args[1]));
-						if($ses->getFaction() != $demoted->getFaction()) {
+						if(!$ses->getFaction()->hasPlayer_string($args[1])) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is not in this faction!"));
 							return true;
 						}
-						if(!$demoted->isOfficer()) {
+						$demoted = $this->plugin->getSessionFromName($args[1]);
+						if(strcmp($ses->getFaction()->getRank_string($args[1]),"Officer") != 0) {
 							$sender->sendMessage($this->plugin->formatMessage("Player is already Member"));
 							return true;
 						}
-						$demoted->getFaction()->setRank($demoted->getPlayer(), "Member");
-						$sender->sendMessage($this->plugin->formatMessage("" . $demoted->getPlayer()->getName() . " has been demoted to Member.", true));
-						$demoted->getPlayer()->sendMessage($this->plugin->formatMessage("You were demoted to Member.", true));
-						$demoted->updateRank();
-						$demoted->updateTag();
+						$ses->getFaction()->setRank_string($args[1], "Member");
+						$sender->sendMessage($this->plugin->formatMessage("" . $args[1] . " has been demoted to Member.", true));
+						if(!$demoted == false) { $demoted->getPlayer()->sendMessage($this->plugin->formatMessage("You were demoted to Member.", true));
+							$demoted->updateRank();
+							$demoted->updateTag();
+						}
 					}
 					
 					/////////////////////////////// KICK ///////////////////////////////
@@ -469,7 +471,7 @@ class FactionCommands {
 					/////////////////////////////// ABOUT ///////////////////////////////
 					
 					if(strtolower($args[0] == 'about')) {
-						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.5b2 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
+						$sender->sendMessage(TextFormat::BLUE . "FactionsPro v1.5b3 by " . TextFormat::BOLD . "Tethered_\n" . TextFormat::RESET . TextFormat::BLUE . "Twitter: " . TextFormat::ITALIC . "@Tethered_");
 					}
 				}
 		} else {

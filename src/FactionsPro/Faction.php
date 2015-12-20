@@ -73,10 +73,10 @@ class Faction
 		}
 		if($player instanceof Player)
 		{
-			$this->members[$player->getName()] = $rank;
+			$this->members[strtolower($player->getName())] = $rank;
 			return true;
 		} else {
-			$this->members[$player] = $rank;
+			$this->members[strtolower($player)] = $rank;
 			return true;
 		}
 	}
@@ -157,12 +157,17 @@ class Faction
 		$this->members[$player->getName()] = $rank;
 	}
 	
+	public function setRank_string($player, $rank)
+	{
+		$this->members[$player] = $rank;
+	}
+	
 	public function exportMembers()
 	{
 		$export = "";
 		foreach($this->members as $member => $rank)
 		{
-			$export = $export . "$member:$rank,";
+			$export = $export . "" . strtolower($member) .":$rank,";
 		}
 		return substr($export, 0, -1);
 	}
@@ -171,7 +176,7 @@ class Faction
 	{
 		foreach($this->members as $name => $rank)
 		{
-			if($player->getName() == $name) { return true; }
+			if(strtolower($player->getName()) == strtolower($name)) { return true; }
 		}
 		return false;
 	}
@@ -180,14 +185,24 @@ class Faction
 	{
 		foreach($this->members as $name => $rank)
 		{
-			if(strtolower($playerName) == strtolower($name)) { return true; }
+			$this->plugin->getServer()->getLogger()->info($playerName . " " . $name);
+			if(strcmp(strtolower($playerName), strtolower($name)) == 0) { return true; }
 		}
+		$this->plugin->getServer()->getLogger()->info("IT'S FUCKING FALSE WTF");
 		return false;
 	}
 	
 	public function getRank(Player $player)
 	{
-		return $this->members[$player->getName()];
+		return $this->members[strtolower($player->getName())];
+	}
+	
+	public function getRank_string($player)
+	{
+		if($this->hasPlayer_string($player))
+		{
+			return $this->members[$player];
+		}
 	}
 	
 	public function getLeader() // returns name as string
