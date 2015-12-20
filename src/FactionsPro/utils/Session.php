@@ -20,7 +20,10 @@ class Session
 		$this->player = $player;
 		$this->updateFaction();
 		$this->updateTag();
-		$this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage($player->getName() . " session initialized!", true));
+		if($this->plugin->devModeEnabled())
+		{
+			$this->plugin->getServer()->getLogger()->info($this->plugin->formatMessage($player->getName() . " session initialized!", true));
+		}
 	}
 	
 	public function registerInvite(FactionInvite $invite)
@@ -74,12 +77,12 @@ class Session
 	public function updateTag()
 	{
 		$this->updateFaction();
-		if(!$this->inFaction()) {
+		if(!$this->inFaction() || !$this->plugin->prefs->get("Factions In Overhead Nametag")) {
 			$this->getPlayer()->setNameTag($this->getPlayer()->getName());
 		} elseif($this->isLeader()) {
-			$this->getPlayer()->setNameTag("**[" . $this->getFactionName() . "] " . $this->getPlayer()->getName());
+			$this->getPlayer()->setNameTag($this->plugin->prefs->get("Leader Identifier") . "[" . $this->getFactionName() . "] " . $this->getPlayer()->getName());
 		} elseif($this->isOfficer()) {
-			$this->getPlayer()->setNameTag("*[" . $this->getFactionName() . "] " . $this->getPlayer()->getName());
+			$this->getPlayer()->setNameTag($this->plugin->prefs->get("Officer Identifier") . "[" . $this->getFactionName() . "] " . $this->getPlayer()->getName());
 		} elseif($this->isMember()) {
 			$this->getPlayer()->setNameTag("[" . $this->getFactionName() . "] " . $this->getPlayer()->getName());
 		}

@@ -51,25 +51,6 @@ class FactionListener implements Listener {
 		
 		$player = strtolower($PCE->getPlayer()->getName());
 	}
-		//MOTD Check
-		//TODO Use arrays instead of database for faster chatting?
-		
-		/*if($this->plugin->motdWaiting($player)) {
-			if(time() - $this->plugin->getMOTDTime($player) > 30) {
-				$PCE->getPlayer()->sendMessage($this->plugin->formatMessage("Timed out. Please use /f motd again."));
-				$this->plugin->db->query("DELETE FROM motdrcv WHERE player='$player';");
-				$PCE->setCancelled(true);
-				return true;
-			} else {
-				$motd = $PCE->getMessage();
-				$faction = $this->plugin->getPlayerFaction($player);
-				$this->plugin->setMOTD($faction, $player, $motd);
-				$PCE->setCancelled(true);
-				$PCE->getPlayer()->sendMessage($this->plugin->formatMessage("Successfully updated faction message of the day!", true));
-			}
-			return true;
-		}
-	}
 	
 	public function factionPVP(EntityDamageEvent $factionDamage) {
 		if($factionDamage instanceof EntityDamageByEntityEvent) {
@@ -88,27 +69,4 @@ class FactionListener implements Listener {
 			}
 		}
 	}
-	public function factionBlockBreakProtect(BlockBreakEvent $event) {
-		if($this->plugin->isInPlot($event->getPlayer())) {
-			if($this->plugin->inOwnPlot($event->getPlayer())) {
-				return true;
-			} else {
-				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot break blocks here."));
-				return true;
-			}
-		}
-	}
-	
-	public function factionBlockPlaceProtect(BlockPlaceEvent $event) {
-		if($this->plugin->isInPlot($event->getPlayer())) {
-			if($this->plugin->inOwnPlot($event->getPlayer())) {
-				return true;
-			} else {
-				$event->setCancelled(true);
-				$event->getPlayer()->sendMessage($this->plugin->formatMessage("You cannot place blocks here."));
-				return true;
-			}
-		}
-	}*/
 }

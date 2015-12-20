@@ -3,26 +3,33 @@
 namespace FactionsPro;
 
 use pocketmine\Player;
+use pocketmine\level\Position;
+use pocketmine\level\pocketmine\level;
+use FactionsPro\utils\Home;
+
 class Faction
 {
 	private $name;
 	private $members = array();
-	private $hasPlot;
 	private $plugin;
+	private $description;
+	private $home;
 	
 	public function __construct($plugin, $name, $leader)
 	{
 		$this->addPlayer($leader, "Leader");
 		$this->name = $name;
-		$this->hasPlot = false;
+		$this->description = "Description not set";
 		$this->plugin = $plugin;
 		$this->plugin->addFaction($this);
+		$this->home = null;
 	}
 	
 	public static function import($string, $plugin)
 	{
 		$name = strstr($string, "$", true);
-		$members = explode(",", substr(strstr($string, "$"), 1));
+		$members = explode(",", substr(strstr(strstr($string, "$"), "#", true), 1));
+		$desc = str_replace("|", " ", strstr(strstr($string, "#"), "%", true));
 		$leaderID = 0;
 		foreach($members as $num => $text)
 		{
@@ -33,14 +40,29 @@ class Faction
 		}
 		$leader = strstr($members[$leaderID], ":", true);
 		$faction = new self($plugin, $name, $leader);
-		unset($members[$leaderID]);
-		foreach($members as $num => $text)
+		if(strcmp(substr(strstr($string, "%"), 1), "null") != 0)
+		{
+			$home_raw = str_replace("%", "", strstr($string, "%"));
+			$home_array = explode("_", $home_raw);
+			$x = $home_array[0];
+			$y = $home_array[1];
+			$z = $home_array[2];
+			$levelName = $home_array[3];
+			$level = $plugin->getServer()->getLevelByName($levelName);
+			$faction->sethome(new Position($x, $y, $z, $level));
+		}
+			unset($members[$leaderID]);
+			foreach($members as $num => $text)
 		{
 			$player = strstr($text, ":", true);
 			$rank = substr(strstr($text, ":"), 1);
 			$faction->addPlayer($player, $rank);
 		}
-		$plugin->getServer()->getLogger()->info($plugin->formatMessage("[X] $name", true));
+		$faction->setDescription($desc);
+		if($plugin->prefs->get("Developer Mode"))
+		{
+			$plugin->getServer()->getLogger()->info($plugin->formatMessage("[X] $name", true));
+		}
 	}
 	
 	public function addPlayer($player, $rank)
@@ -79,6 +101,26 @@ class Faction
 		return false;
 	}
 	
+	public function sethome(Position $position)
+	{
+		$this->home = new Home($position->x, $position->y, $position->z, $position->level->getName(), $this->plugin);
+	}
+	
+	public function unsethome()
+	{
+		$this->home = null;
+	}
+	
+	public function hasHome()
+	{
+		return $this->home != null;
+	}
+	
+	public function getHome()
+	{
+		return $this->home->get();
+	}
+	
 	public function delete()
 	{
 		foreach($this->members as $name => $rank)
@@ -94,7 +136,20 @@ class Faction
 	
 	public function export()
 	{
-		return "" . $this->name . "$" . $this->exportMembers();
+		if($this->hasHome()) { return "" . $this->name . "$" . $this->exportMembers() . "#" . str_replace(" ", "|", $this->getDescription()) . "%" . $this->home->export();
+		} else {
+			return "" . $this->name . "$" . $this->exportMembers() . "#" . str_replace(" ", "|", $this->getDescription()) . "%null";
+		}
+	}
+	
+	public function setDescription($desc)
+	{
+		$this->description = $desc;
+	}
+	
+	public function getDescription()
+	{
+		return $this->description;
 	}
 	
 	public function setRank(Player $player, $rank)
@@ -148,7 +203,7 @@ class Faction
 	
 	public function isFull()
 	{
-		return $this->getNumberMembers() >= $this->plugin->prefs->get("MaxPlayersPerFaction");
+		return $this->getNumberMembers() >= $this->plugin->prefs->get("Maximum Players Per Faction");
 	}
 	
 	public function getNumberMembers()
